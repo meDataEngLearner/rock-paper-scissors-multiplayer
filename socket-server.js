@@ -255,5 +255,5 @@ io.on('connection', (socket) => {
 
 server.listen(PORT, () => {
   console.log(`Socket.IO server running on port ${PORT}`);
-  console.log(`Server URL: ${process.env.NODE_ENV === 'production' ? 'https://your-app-name.herokuapp.com' : `http://localhost:${PORT}`}`);
+  console.log(`Server URL: ${process.env.NODE_ENV === 'production' ? 'https://rock-paper-scissors-multiplayer-w3f2.onrender.com' : `http://localhost:${PORT}`}`);
 }); 
