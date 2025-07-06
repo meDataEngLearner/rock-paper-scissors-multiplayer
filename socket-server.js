@@ -31,6 +31,7 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 3001;
+console.log('[Server] Will listen on port:', PORT);
 
 const rooms = {}; // { roomId: { players: [socketId, ...], moves: {}, createdAt: timestamp, joinTimeout: timeoutId } }
 const JOIN_TIMEOUT = 60000; // 60 seconds to join room

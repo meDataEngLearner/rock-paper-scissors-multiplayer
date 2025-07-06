@@ -8,6 +8,8 @@ const LAN_IP = '192.168.1.7'; // Your local LAN IP for development
 const PORT = '3001';
 
 export const getSocketServerUrl = () => {
+  const url = 'https://your-app-name.herokuapp.com'; // or your Render URL
+  console.log('[Socket] Connecting to socket server URL:', url);
   if (process.env.NODE_ENV === 'development') {
     // Use local server for development
     return 'http://192.168.1.7:3001';
