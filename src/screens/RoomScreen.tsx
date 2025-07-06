@@ -14,14 +14,12 @@ import { RootStackParamList } from '../../App';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
-import io, { Socket } from 'socket.io-client';
-import { getSocketServerUrl } from '../utils/socketUrl';
+import { useSocket } from '../utils/SocketContext';
 
 type RoomScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Room'>;
 type RoomScreenRouteProp = RouteProp<RootStackParamList, 'Room'>;
 
 const { width } = Dimensions.get('window');
-const SOCKET_SERVER_URL = getSocketServerUrl();
 
 export default function RoomScreen() {
   const navigation = useNavigation<RoomScreenNavigationProp>();
@@ -30,29 +28,174 @@ export default function RoomScreen() {
   
   const [opponentJoined, setOpponentJoined] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [playerCount, setPlayerCount] = useState(1);
+  const [timeLeft, setTimeLeft] = useState(60); // 60 seconds countdown
+  const [isRoomCreated, setIsRoomCreated] = useState(false);
+  const [joinAttempts, setJoinAttempts] = useState(0);
+  const maxJoinAttempts = 5;
+  const joinRetryDelay = 700; // ms
+  const [playerNumber, setPlayerNumber] = useState<number | null>(null);
+
+  const socket = useSocket();
 
   useEffect(() => {
-    const s = io(SOCKET_SERVER_URL);
-    setSocket(s);
-    s.emit('join_room', roomId);
-    s.on('player_update', (count) => {
-      setPlayerCount(count);
-      setOpponentJoined(count === 2);
-    });
-    s.on('both_joined', () => {
-      setOpponentJoined(true);
-    });
-    s.on('room_full', () => {
+    if (!socket) return;
+    console.log('[RoomScreen] Initializing with roomId:', roomId, 'isHost:', isHost);
+
+    let joinTimeout: NodeJS.Timeout | null = null;
+
+    const tryJoinRoom = (attempt: number) => {
+      if (attempt > maxJoinAttempts) {
+        Alert.alert('Room Not Found', 'This room ID does not exist. Please check the room ID and try again.');
+        navigation.goBack();
+        return;
+      }
+      setJoinAttempts(attempt);
+      console.log(`[RoomScreen] Guest join attempt ${attempt} for room:`, roomId);
+      socket.emit('join_room', roomId);
+    };
+
+    const onConnect = () => {
+      console.log('[RoomScreen] Connected to server');
+      if (isHost) {
+        console.log('[RoomScreen] I am the HOST, creating room:', roomId);
+        console.log('[RoomScreen] Emitting create_room for:', roomId);
+        socket.emit('create_room', roomId);
+      } else {
+        tryJoinRoom(1);
+      }
+    };
+
+    if (socket.connected) {
+      onConnect();
+    }
+    socket.on('connect', onConnect);
+
+    const onRoomCreated = (createdRoomId: string) => {
+      console.log('[RoomScreen] Room created:', createdRoomId);
+      setIsRoomCreated(true);
+    };
+    socket.on('room_created', onRoomCreated);
+
+    const onRoomExists = () => {
+      console.log('[RoomScreen] Room already exists');
+      Alert.alert('Room Exists', 'This room ID already exists. Please try a different room ID.');
+      navigation.goBack();
+    };
+    socket.on('room_exists', onRoomExists);
+
+    const onRoomFull = () => {
+      console.log('[RoomScreen] Room is full');
       Alert.alert('Room Full', 'This room already has 2 players.');
       navigation.goBack();
-    });
-    return () => {
-      s.emit('leave_room', roomId);
-      s.disconnect();
     };
-  }, [roomId]);
+    socket.on('room_full', onRoomFull);
+
+    const onRoomTimeout = () => {
+      console.log('[RoomScreen] Room timed out');
+      Alert.alert('Room Timeout', 'No opponent joined within 60 seconds. Please create a new room.');
+      navigation.goBack();
+    };
+    socket.on('room_timeout', onRoomTimeout);
+
+    const onPlayerUpdate = (count: number) => {
+      console.log('[RoomScreen] Player update:', count);
+      console.log('[RoomScreen] Setting opponentJoined to:', count === 2);
+      setPlayerCount(count);
+      setOpponentJoined(count === 2);
+    };
+    socket.on('player_update', onPlayerUpdate);
+
+    const onPlayerNumber = (num: number) => {
+      setPlayerNumber(num);
+      console.log('[RoomScreen] Received player number:', num);
+    };
+    socket.on('player_number', onPlayerNumber);
+
+    const onGameStart = () => {
+      console.log('[RoomScreen] Game starting!');
+      console.log('[RoomScreen] Navigating to Game screen with mode: multiplayer, roomId:', roomId);
+      navigation.replace('Game', { mode: 'multiplayer', roomId, playerNumber });
+    };
+    socket.on('game_start', onGameStart);
+
+    const onDisconnect = (reason: string) => {
+      console.log('[RoomScreen] Disconnected:', reason);
+    };
+    socket.on('disconnect', onDisconnect);
+
+    const onReconnect = (attemptNumber: number) => {
+      console.log('[RoomScreen] Reconnected after', attemptNumber, 'attempts');
+      if (isHost) {
+        socket.emit('create_room', roomId);
+      } else {
+        socket.emit('join_room', roomId);
+      }
+    };
+    socket.on('reconnect', onReconnect);
+
+    const onReconnectError = (error: any) => {
+      console.log('[RoomScreen] Reconnection error:', error);
+    };
+    socket.on('reconnect_error', onReconnectError);
+
+    const onReconnectFailed = () => {
+      console.log('[RoomScreen] Reconnection failed');
+      Alert.alert('Connection Lost', 'Unable to reconnect to the server. Please try again.');
+    };
+    socket.on('reconnect_failed', onReconnectFailed);
+
+    const onRoomNotFound = () => {
+      if (!isHost && joinAttempts < maxJoinAttempts) {
+        // Retry after delay
+        joinTimeout = setTimeout(() => {
+          tryJoinRoom(joinAttempts + 1);
+        }, joinRetryDelay);
+      } else {
+        console.log('[RoomScreen] Room not found after retries');
+        Alert.alert('Room Not Found', 'This room ID does not exist. Please check the room ID and try again.');
+        navigation.goBack();
+      }
+    };
+    socket.on('room_not_found', onRoomNotFound);
+
+    return () => {
+      if (joinTimeout) clearTimeout(joinTimeout);
+      console.log('[RoomScreen] Cleanup - leaving room');
+      socket.emit('leave_room', roomId);
+      // Remove all listeners for this screen
+      socket.off('connect', onConnect);
+      socket.off('room_created', onRoomCreated);
+      socket.off('room_exists', onRoomExists);
+      socket.off('room_full', onRoomFull);
+      socket.off('room_timeout', onRoomTimeout);
+      socket.off('player_update', onPlayerUpdate);
+      socket.off('player_number', onPlayerNumber);
+      socket.off('game_start', onGameStart);
+      socket.off('disconnect', onDisconnect);
+      socket.off('reconnect', onReconnect);
+      socket.off('reconnect_error', onReconnectError);
+      socket.off('reconnect_failed', onReconnectFailed);
+      socket.off('room_not_found', onRoomNotFound);
+    };
+  }, [roomId, isHost, socket, joinAttempts, playerNumber]);
+
+  // Countdown timer for room timeout
+  useEffect(() => {
+    if (isHost && isRoomCreated && !opponentJoined) {
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [isHost, isRoomCreated, opponentJoined]);
 
   const handleCopyRoomId = async () => {
     try {
@@ -73,11 +216,6 @@ export default function RoomScreen() {
     } catch (error) {
       console.log('Error sharing:', error);
     }
-  };
-
-  const handleStartGame = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate('Game', { mode: 'multiplayer', roomId });
   };
 
   return (
@@ -127,8 +265,14 @@ export default function RoomScreen() {
               </View>
               <Text style={styles.waitingText}>Waiting for opponent... ({playerCount}/2)</Text>
               <Text style={styles.waitingSubtext}>
-                Share the room ID with a friend to start playing
+                {isHost 
+                  ? 'Share the room ID with a friend to start playing'
+                  : 'Waiting for the host to be ready'
+                }
               </Text>
+              {isHost && timeLeft > 0 && (
+                <Text style={styles.timerText}>Time remaining: {timeLeft}s</Text>
+              )}
             </View>
           ) : (
             <View style={styles.readyContainer}>
@@ -136,20 +280,7 @@ export default function RoomScreen() {
                 <Text style={styles.readyIconText}>✓</Text>
               </View>
               <Text style={styles.readyText}>Opponent joined!</Text>
-              <Text style={styles.readySubtext}>Ready to start the game</Text>
-              
-              <TouchableOpacity
-                style={styles.startButton}
-                onPress={handleStartGame}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={['#4facfe', '#00f2fe']}
-                  style={styles.startButtonGradient}
-                >
-                  <Text style={styles.startButtonText}>Start Game</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+              <Text style={styles.readySubtext}>Starting game...</Text>
             </View>
           )}
         </View>
@@ -286,22 +417,9 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
     marginBottom: 30,
   },
-  startButton: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  startButtonGradient: {
-    paddingVertical: 18,
-    paddingHorizontal: 40,
-  },
-  startButtonText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+  timerText: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 10,
   },
 }); 
