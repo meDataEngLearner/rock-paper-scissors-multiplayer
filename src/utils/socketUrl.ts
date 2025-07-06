@@ -7,11 +7,11 @@ const PRODUCTION_URL = 'https://rock-paper-scissors-multiplayer-w3f2.onrender.co
 const LAN_IP = '192.168.1.7'; // Your local LAN IP for development
 const PORT = '3001';
 
-export function getSocketServerUrl() {
-  // Use LAN IP for real device testing, localhost for emulator
-  if (Platform.OS === 'web') {
-    return 'http://localhost:3001';
-  } else {
-    return `http://${LAN_IP}:${PORT}`;
+export const getSocketServerUrl = () => {
+  if (process.env.NODE_ENV === 'development') {
+    // Use local server for development
+    return 'http://192.168.1.7:3001';
   }
-} 
+  // Use Render server for production
+  return 'https://rock-paper-scissors-multiplayer-w3f2.onrender.com';
+}; 
