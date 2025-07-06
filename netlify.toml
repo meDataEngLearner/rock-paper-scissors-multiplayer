@@ -1,0 +1,14 @@
+[build]
+  command = "npm install"
+  publish = "."
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/socket.io/*"
+  to = "/.netlify/functions/socket-server"
+  status = 200
+
+[functions]
+  directory = "netlify/functions" 
