@@ -2,7 +2,23 @@
 const { Server } = require('socket.io');
 const http = require('http');
 
-const server = http.createServer();
+const server = http.createServer((req, res) => {
+  // Health check endpoint for Render
+  if (req.url === '/health' || req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      status: 'ok', 
+      message: 'Rock Paper Scissors Socket.IO Server is running',
+      timestamp: new Date().toISOString()
+    }));
+    return;
+  }
+  
+  // Handle other HTTP requests
+  res.writeHead(404, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ error: 'Not found' }));
+});
+
 const io = new Server(server, {
   cors: {
     origin: '*', // Allow all origins for internet access

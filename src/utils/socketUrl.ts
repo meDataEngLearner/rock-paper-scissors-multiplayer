@@ -2,7 +2,8 @@
 import { Platform } from 'react-native';
 
 // CHANGE THESE URLs based on your deployment
-const PRODUCTION_URL = 'https://your-app-name.herokuapp.com'; // Replace with your actual deployed URL
+// Replace this with your actual Render URL after deployment
+const PRODUCTION_URL = 'https://your-render-url.onrender.com'; // TODO: Update with your Render URL
 const LAN_IP = '192.168.1.7'; // Your local LAN IP for development
 const PORT = '3001';
 
