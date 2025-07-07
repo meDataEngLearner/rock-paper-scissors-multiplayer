@@ -9,6 +9,7 @@ import {
   Animated,
   Button,
   ScrollView,
+  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -44,6 +45,7 @@ export default function GameScreen() {
   const [canPlayAgain, setCanPlayAgain] = useState(false);
   const [showOpponentLeftModal, setShowOpponentLeftModal] = useState(false);
   const [gameHasStarted, setGameHasStarted] = useState(false);
+  const [opponentLeftCountdown, setOpponentLeftCountdown] = useState<number | null>(null);
   
   const countdownAnimation = useRef(new Animated.Value(1)).current;
   const choiceAnimation = useRef(new Animated.Value(0)).current;
@@ -131,9 +133,10 @@ export default function GameScreen() {
       socket.on('reconnect_failed', onReconnectFailed);
 
       const onOpponentLeft = () => {
-        if (gamePhase === 'playing' || gamePhase === 'result') {
+        if (gamePhase === 'playing' || gamePhase === 'result' || gamePhase === 'countdown') {
           setShowOpponentLeftModal(true);
           setGamePhase('opponent_left');
+          setOpponentLeftCountdown(3);
         }
       };
       socket.on('opponent_left', onOpponentLeft);
@@ -164,6 +167,22 @@ export default function GameScreen() {
       startSinglePlayerRound();
     }
   }, [mode, roomId, socket]);
+
+  // Countdown effect for opponent left
+  useEffect(() => {
+    if (gamePhase === 'opponent_left' && showOpponentLeftModal && opponentLeftCountdown !== null) {
+      if (opponentLeftCountdown === 0) {
+        setShowOpponentLeftModal(false);
+        setOpponentLeftCountdown(null);
+        navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+        return;
+      }
+      const timer = setTimeout(() => {
+        setOpponentLeftCountdown((prev) => (prev !== null ? prev - 1 : null));
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [gamePhase, showOpponentLeftModal, opponentLeftCountdown, navigation]);
 
   const startCountdown = () => {
     setCountdown(3);
@@ -370,17 +389,20 @@ export default function GameScreen() {
 
             {gamePhase === 'countdown' && (
               <View style={styles.countdownContainer}>
-                <Animated.Text
-                  style={[
-                    styles.countdownText,
-                    {
+                <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: '#e0e0e0', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
+                  <Animated.Text
+                    style={{
+                      fontSize: 72,
+                      fontWeight: 'bold',
+                      color: '#764ba2',
                       opacity: countdownAnimation,
                       transform: [{ scale: countdownAnimation }],
-                    },
-                  ]}
-                >
-                  {countdown}
-                </Animated.Text>
+                    }}
+                  >
+                    {countdown}
+                  </Animated.Text>
+                </View>
+                <Text style={{ fontSize: 20, color: '#888', marginTop: 8 }}>Get Ready!</Text>
               </View>
             )}
 
@@ -504,6 +526,30 @@ export default function GameScreen() {
           </View>
         </ScrollView>
       </LinearGradient>
+      {showOpponentLeftModal && (
+        <Modal
+          visible={showOpponentLeftModal}
+          transparent
+          animationType="fade"
+        >
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.7)' }}>
+            <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', width: 300 }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 12, color: '#222' }}>Opponent Left</Text>
+              <Text style={{ fontSize: 16, marginBottom: 24, color: '#444', textAlign: 'center' }}>
+                Your opponent left the room. You no longer have an opponent.
+              </Text>
+              <View style={{ justifyContent: 'center', alignItems: 'center', marginVertical: 16 }}>
+                <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#e0e0e0', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
+                  <Text style={{ fontSize: 48, fontWeight: 'bold', color: '#764ba2' }}>
+                    {opponentLeftCountdown ?? 3}
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 16, color: '#888' }}>Returning to Home...</Text>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -565,11 +611,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  countdownText: {
-    fontSize: getResponsiveFontSize(40),
-    fontWeight: 'bold',
-    color: '#fff',
   },
   playingContainer: {
     flex: 1,
