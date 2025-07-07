@@ -38,6 +38,7 @@ export default function RoomScreen() {
   const [playerNumber, setPlayerNumber] = useState<number>(0);
   const [opponentLeftModal, setOpponentLeftModal] = useState(false);
   const [opponentTimeoutModal, setOpponentTimeoutModal] = useState(false);
+  const [hasNavigated, setHasNavigated] = useState(false);
 
   const socket = useSocket();
 
@@ -116,6 +117,8 @@ export default function RoomScreen() {
     socket.on('player_number', onPlayerNumber);
 
     const onGameStart = () => {
+      if (hasNavigated) return; // Prevent multiple navigations
+      setHasNavigated(true);
       console.log('[RoomScreen] Game starting!');
       setOpponentLeftModal(false);
       console.log('[RoomScreen] Navigating to Game screen with mode: multiplayer, roomId:', roomId);

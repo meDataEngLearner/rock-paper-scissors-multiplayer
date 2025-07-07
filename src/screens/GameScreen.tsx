@@ -61,6 +61,7 @@ export default function GameScreen() {
       socket.on('connect', onConnect);
 
       const onGameStart = () => {
+        if (gameHasStarted) return; // Prevent multiple triggers
         console.log('[GameScreen] Game started!');
         setGamePhase('countdown');
         setShowOpponentLeftModal(false);
@@ -162,7 +163,7 @@ export default function GameScreen() {
       // Single player mode - start immediately
       startSinglePlayerRound();
     }
-  }, [mode, roomId, socket, gameHasStarted, gamePhase]);
+  }, [mode, roomId, socket]);
 
   const startCountdown = () => {
     setCountdown(3);
