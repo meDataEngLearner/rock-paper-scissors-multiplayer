@@ -87,7 +87,8 @@ io.on('connection', (socket) => {
       players: [socket.id],
       moves: {},
       createdAt: Date.now(),
-      joinTimeout: null
+      joinTimeout: null,
+      gameStarted: false
     };
     
     playerRooms[socket.id] = roomId;
@@ -184,6 +185,7 @@ io.on('connection', (socket) => {
       // Add a small delay to ensure all clients are ready
       setTimeout(() => {
         console.log(`Emitting game_start to room ${roomId} after delay`);
+        rooms[roomId].gameStarted = true;
         io.to(roomId).emit('game_start');
         console.log(`game_start event emitted successfully`);
         console.log(`[SOCKET] Emitting to room ${roomId}: game_start`);
@@ -246,7 +248,7 @@ io.on('connection', (socket) => {
       }
       io.to(roomId).emit('player_update', rooms[roomId].players.length);
       // Notify remaining player if only one left
-      if (rooms[roomId] && rooms[roomId].players.length === 1) {
+      if (rooms[roomId] && rooms[roomId].players.length === 1 && rooms[roomId].gameStarted) {
         const remainingPlayer = rooms[roomId].players[0];
         io.to(remainingPlayer).emit('opponent_left');
         console.log(`[SOCKET] Emitting to ${remainingPlayer}: opponent_left`);
@@ -277,7 +279,7 @@ io.on('connection', (socket) => {
           room.joinTimeout = null;
         }
         // Notify remaining player if only one left
-        if (rooms[roomId] && room.players.length === 1) {
+        if (rooms[roomId] && room.players.length === 1 && rooms[roomId].gameStarted) {
           const remainingPlayer = room.players[0];
           io.to(remainingPlayer).emit('opponent_left');
           console.log(`[SOCKET] Emitting to ${remainingPlayer}: opponent_left`);

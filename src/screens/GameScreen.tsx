@@ -43,6 +43,7 @@ export default function GameScreen() {
   const [opponentMoved, setOpponentMoved] = useState(false);
   const [canPlayAgain, setCanPlayAgain] = useState(false);
   const [showOpponentLeftModal, setShowOpponentLeftModal] = useState(false);
+  const [gameHasStarted, setGameHasStarted] = useState(false);
   
   const countdownAnimation = useRef(new Animated.Value(1)).current;
   const choiceAnimation = useRef(new Animated.Value(0)).current;
@@ -62,6 +63,8 @@ export default function GameScreen() {
       const onGameStart = () => {
         console.log('[GameScreen] Game started!');
         setGamePhase('countdown');
+        setShowOpponentLeftModal(false);
+        setGameHasStarted(true);
         startCountdown();
       };
       socket.on('game_start', onGameStart);
@@ -127,8 +130,10 @@ export default function GameScreen() {
       socket.on('reconnect_failed', onReconnectFailed);
 
       const onOpponentLeft = () => {
-        setShowOpponentLeftModal(true);
-        setGamePhase('opponent_left');
+        if (gameHasStarted) {
+          setShowOpponentLeftModal(true);
+          setGamePhase('opponent_left');
+        }
       };
       socket.on('opponent_left', onOpponentLeft);
 
@@ -151,13 +156,14 @@ export default function GameScreen() {
         socket.off('opponent_moved', onOpponentMoved);
         socket.off('opponent_left', onOpponentLeft);
         // Do NOT emit leave_room here; only do so in handleQuit
+        socket.off('game_start', onGameStart);
       };
     } else if (mode === 'computer') {
       // Single player mode - start immediately
       setGamePhase('countdown');
       startCountdown();
     }
-  }, [mode, roomId, socket]);
+  }, [mode, roomId, socket, gameHasStarted]);
 
   const startCountdown = () => {
     setCountdown(3);
@@ -283,6 +289,14 @@ export default function GameScreen() {
   };
 
   const handleQuit = () => {
+    if (mode === 'multiplayer' && roomId && socket) {
+      socket.emit('leave_room', roomId);
+    }
+    navigation.goBack();
+  };
+
+  const handleOpponentLeftAcknowledge = () => {
+    setShowOpponentLeftModal(false);
     if (mode === 'multiplayer' && roomId && socket) {
       socket.emit('leave_room', roomId);
     }
@@ -447,12 +461,15 @@ export default function GameScreen() {
 
             {gamePhase === 'opponent_left' && showOpponentLeftModal && (
               <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.7)' }}>
-                <View style={{ backgroundColor: '#222', borderRadius: 16, padding: 28, alignItems: 'center', width: '80%' }}>
+                <View style={{ backgroundColor: '#222', borderRadius: 16, padding: 32, alignItems: 'center', width: '80%' }}>
+                  <Text style={{ fontSize: getResponsiveFontSize(48), marginBottom: 12 }}>😞</Text>
                   <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(22), fontWeight: 'bold', marginBottom: 12 }}>Opponent Left</Text>
                   <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginBottom: 24, textAlign: 'center' }}>
                     Your opponent has left the game. The game is over.
                   </Text>
-                  <Button title="Quit" onPress={handleQuit} color="#d9534f" />
+                  <TouchableOpacity style={{ backgroundColor: '#4facfe', borderRadius: 8, paddingVertical: 12, paddingHorizontal: 32 }} onPress={handleOpponentLeftAcknowledge}>
+                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: getResponsiveFontSize(18) }}>OK</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             )}
