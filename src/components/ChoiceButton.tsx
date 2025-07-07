@@ -5,8 +5,10 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { getRandomHandImage } from '../utils/handImages';
 
 const { width } = Dimensions.get('window');
 
@@ -18,19 +20,12 @@ interface ChoiceButtonProps {
   disabled?: boolean;
 }
 
-const getChoiceEmoji = (choice: Choice): string => {
-  switch (choice) {
-    case 'rock': return '🪨';
-    case 'paper': return '📄';
-    case 'scissors': return '✂️';
-  }
-};
-
-const getChoiceColor = (choice: Choice): string[] => {
+const getChoiceColor = (choice: Choice): [string, string] => {
   switch (choice) {
     case 'rock': return ['#8B4513', '#A0522D'];
     case 'paper': return ['#4169E1', '#6495ED'];
     case 'scissors': return ['#32CD32', '#90EE90'];
+    default: return ['#888', '#bbb'];
   }
 };
 
@@ -99,7 +94,7 @@ export default function ChoiceButton({ choice, onPress, disabled = false }: Choi
           colors={getChoiceColor(choice)}
           style={styles.gradient}
         >
-          <Text style={styles.emoji}>{getChoiceEmoji(choice)}</Text>
+          <Image source={getRandomHandImage(choice)} style={{ width: 56, height: 56, marginBottom: 5 }} resizeMode="contain" />
           <Text style={styles.label}>{choice.toUpperCase()}</Text>
         </LinearGradient>
       </Animated.View>
