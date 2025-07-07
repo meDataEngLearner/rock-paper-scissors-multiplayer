@@ -130,7 +130,7 @@ export default function GameScreen() {
       socket.on('reconnect_failed', onReconnectFailed);
 
       const onOpponentLeft = () => {
-        if (gameHasStarted) {
+        if (gamePhase === 'playing' || gamePhase === 'result') {
           setShowOpponentLeftModal(true);
           setGamePhase('opponent_left');
         }
@@ -160,10 +160,9 @@ export default function GameScreen() {
       };
     } else if (mode === 'computer') {
       // Single player mode - start immediately
-      setGamePhase('countdown');
-      startCountdown();
+      startSinglePlayerRound();
     }
-  }, [mode, roomId, socket, gameHasStarted]);
+  }, [mode, roomId, socket, gameHasStarted, gamePhase]);
 
   const startCountdown = () => {
     setCountdown(3);
@@ -189,8 +188,35 @@ export default function GameScreen() {
     ]).start();
   };
 
+  // Helper to start a new round in single player mode
+  const startSinglePlayerRound = () => {
+    setPlayerChoice(null);
+    setOpponentChoice(null);
+    setRoundResult(null);
+    setCanPlayAgain(false);
+    setGamePhase('countdown');
+    setCountdown(3);
+    countdownAnimation.setValue(1);
+    let count = 3;
+    const countdownInterval = setInterval(() => {
+      count -= 1;
+      setCountdown(count);
+      if (count <= 0) {
+        clearInterval(countdownInterval);
+        setGamePhase('playing');
+      }
+    }, 1000);
+    Animated.sequence([
+      Animated.timing(countdownAnimation, {
+        toValue: 0,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
   const handleChoice = (choice: string) => {
-    if (gamePhase !== 'playing' || playerChoice || (mode === 'multiplayer' && !playerNumber)) return;
+    if (gamePhase !== 'playing' || playerChoice) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setPlayerChoice(choice);
     Animated.timing(choiceAnimation, {
@@ -228,15 +254,9 @@ export default function GameScreen() {
         } else {
           setScores(prev => ({ ...prev, ties: prev.ties + 1 }));
         }
-        // Reset for next round after 3 seconds
         setTimeout(() => {
-          setPlayerChoice(null);
-          setOpponentChoice(null);
-          setRoundResult(null);
-          setOpponentMoved(false);
-          setGamePhase('countdown');
-          startCountdown();
-        }, 3000);
+          startSinglePlayerRound();
+        }, 2000);
       }, 500);
     }
   };
@@ -300,6 +320,13 @@ export default function GameScreen() {
     if (mode === 'multiplayer' && roomId && socket) {
       socket.emit('leave_room', roomId);
     }
+    // Reset all game state
+    setGamePhase('waiting');
+    setPlayerChoice(null);
+    setOpponentChoice(null);
+    setRoundResult(null);
+    setOpponentMoved(false);
+    setCanPlayAgain(false);
     navigation.goBack();
   };
 
