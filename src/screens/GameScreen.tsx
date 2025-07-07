@@ -10,6 +10,7 @@ import {
   Button,
   ScrollView,
   Modal,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -22,6 +23,7 @@ import ChoiceButton from '../components/ChoiceButton';
 import ScoreBoard from '../components/ScoreBoard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getResponsiveFontSize } from '../utils/responsive';
+import { getRandomHandImage } from '../utils/handImages';
 
 type GameScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Game'>;
 type GameScreenRouteProp = RouteProp<RootStackParamList, 'Game'>;
@@ -446,9 +448,9 @@ export default function GameScreen() {
                       <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
                         <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginBottom: 4 }}>You</Text>
                         <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: width * 0.4, alignItems: 'center' }}>
-                          <Text style={{ fontSize: getResponsiveFontSize(36) }}>
-                            {playerChoice === 'rock' ? '🪨' : playerChoice === 'paper' ? '📄' : playerChoice === 'scissors' ? '✂️' : ''}
-                          </Text>
+                          {['rock', 'paper', 'scissors'].includes(playerChoice) && (
+                            <Image source={getRandomHandImage(playerChoice as 'rock' | 'paper' | 'scissors')} style={{ width: 56, height: 56, marginBottom: 5 }} resizeMode="contain" />
+                          )}
                           <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginTop: 8, textTransform: 'capitalize' }}>{playerChoice || ''}</Text>
                         </View>
                       </View>
@@ -458,9 +460,9 @@ export default function GameScreen() {
                       <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
                         <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginBottom: 4 }}>{mode === 'computer' ? 'Computer' : 'Opponent'}</Text>
                         <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: width * 0.4, alignItems: 'center' }}>
-                          <Text style={{ fontSize: getResponsiveFontSize(36) }}>
-                            {opponentChoice === 'rock' ? '🪨' : opponentChoice === 'paper' ? '📄' : opponentChoice === 'scissors' ? '✂️' : ''}
-                          </Text>
+                          {['rock', 'paper', 'scissors'].includes(opponentChoice) && (
+                            <Image source={getRandomHandImage(opponentChoice as 'rock' | 'paper' | 'scissors')} style={{ width: 56, height: 56, marginBottom: 5 }} resizeMode="contain" />
+                          )}
                           <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginTop: 8, textTransform: 'capitalize' }}>{opponentChoice || ''}</Text>
                         </View>
                       </View>
