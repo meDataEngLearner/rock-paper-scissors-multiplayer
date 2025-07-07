@@ -239,24 +239,22 @@ io.on('connection', (socket) => {
     if (rooms[roomId]) {
       // Remove from players list
       rooms[roomId].players = rooms[roomId].players.filter((id) => id !== socket.id);
-      
       // Clear timeout if it exists
       if (rooms[roomId].joinTimeout) {
         clearTimeout(rooms[roomId].joinTimeout);
         rooms[roomId].joinTimeout = null;
       }
-      
       io.to(roomId).emit('player_update', rooms[roomId].players.length);
-      
-      if (rooms[roomId].players.length === 0) {
-        console.log(`Deleting empty room ${roomId}`);
-        delete rooms[roomId];
-      }
       // Notify remaining player if only one left
-      if (rooms[roomId].players.length === 1) {
+      if (rooms[roomId] && rooms[roomId].players.length === 1) {
         const remainingPlayer = rooms[roomId].players[0];
         io.to(remainingPlayer).emit('opponent_left');
         console.log(`[SOCKET] Emitting to ${remainingPlayer}: opponent_left`);
+      }
+      // Delete room if empty
+      if (rooms[roomId] && rooms[roomId].players.length === 0) {
+        console.log(`Deleting empty room ${roomId}`);
+        delete rooms[roomId];
       }
     }
     delete playerRooms[socket.id];
@@ -266,7 +264,6 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', (reason) => {
     console.log('[SOCKET] Client disconnected:', socket.id, 'Reason:', reason, 'at', new Date().toISOString());
-    
     // Clean up rooms when players disconnect
     const roomId = playerRooms[socket.id];
     if (roomId && rooms[roomId]) {
@@ -274,24 +271,23 @@ io.on('connection', (socket) => {
       const playerIndex = room.players.indexOf(socket.id);
       if (playerIndex > -1) {
         room.players.splice(playerIndex, 1);
-        
         // Clear timeout if it exists
         if (room.joinTimeout) {
           clearTimeout(room.joinTimeout);
           room.joinTimeout = null;
         }
-        
-        if (room.players.length === 0) {
-          console.log(`Deleting empty room ${roomId} due to disconnect`);
-          delete rooms[roomId];
-        } else {
-          io.to(roomId).emit('player_update', room.players.length);
-        }
         // Notify remaining player if only one left
-        if (room.players.length === 1) {
+        if (rooms[roomId] && room.players.length === 1) {
           const remainingPlayer = room.players[0];
           io.to(remainingPlayer).emit('opponent_left');
           console.log(`[SOCKET] Emitting to ${remainingPlayer}: opponent_left`);
+        }
+        // Delete room if empty
+        if (rooms[roomId] && room.players.length === 0) {
+          console.log(`Deleting empty room ${roomId} due to disconnect`);
+          delete rooms[roomId];
+        } else if (rooms[roomId]) {
+          io.to(roomId).emit('player_update', room.players.length);
         }
       }
     }
