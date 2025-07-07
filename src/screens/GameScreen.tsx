@@ -173,7 +173,7 @@ export default function GameScreen() {
   };
 
   const handleChoice = (choice: string) => {
-    if (gamePhase !== 'playing' || playerChoice || !playerNumber) return;
+    if (gamePhase !== 'playing' || playerChoice || (mode === 'multiplayer' && !playerNumber)) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setPlayerChoice(choice);
     Animated.timing(choiceAnimation, {
