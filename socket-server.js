@@ -5,6 +5,7 @@ const http = require('http');
 const server = http.createServer((req, res) => {
   // Health check endpoint for Render
   if (req.url === '/health' || req.url === '/') {
+    console.log(`[HTTP] Health check: ${req.url} from ${req.socket.remoteAddress}`);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ 
       status: 'ok', 
@@ -14,7 +15,8 @@ const server = http.createServer((req, res) => {
     return;
   }
   
-  // Handle other HTTP requests
+  // Log all other HTTP requests
+  console.log(`[HTTP] 404 for ${req.url} from ${req.socket.remoteAddress}`);
   res.writeHead(404, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ error: 'Not found' }));
 });
@@ -38,7 +40,10 @@ const JOIN_TIMEOUT = 60000; // 60 seconds to join room
 const playerRooms = {}; // Track which room each player is in
 
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+  console.log('[SOCKET] New client connected:', socket.id, 'at', new Date().toISOString());
+  socket.onAny((event, ...args) => {
+    console.log(`[SOCKET] Event received: ${event} from ${socket.id} with payload:`, args);
+  });
   
   socket.on('create_room', (roomId) => {
     console.log(`User ${socket.id} creating room ${roomId}`);
@@ -88,6 +93,9 @@ io.on('connection', (socket) => {
     
     socket.emit('room_created', roomId);
     io.to(roomId).emit('player_update', rooms[roomId].players.length);
+    console.log(`[SOCKET] Emitting to ${socket.id}: player_number 1`);
+    console.log(`[SOCKET] Emitting to ${socket.id}: room_created ${roomId}`);
+    console.log(`[SOCKET] Emitting to room ${roomId}: player_update ${rooms[roomId].players.length}`);
   });
   
   socket.on('join_room', (roomId) => {
@@ -148,6 +156,8 @@ io.on('connection', (socket) => {
     }
     
     io.to(roomId).emit('player_update', rooms[roomId].players.length);
+    console.log(`[SOCKET] Emitting to ${socket.id}: player_number 2`);
+    console.log(`[SOCKET] Emitting to room ${roomId}: player_update ${rooms[roomId].players.length}`);
     
     // If both players are in the room, start the game immediately
     if (rooms[roomId].players.length === 2) {
@@ -160,6 +170,7 @@ io.on('connection', (socket) => {
         console.log(`Emitting game_start to room ${roomId} after delay`);
         io.to(roomId).emit('game_start');
         console.log(`game_start event emitted successfully`);
+        console.log(`[SOCKET] Emitting to room ${roomId}: game_start`);
       }, 1000);
     }
   });
@@ -190,6 +201,7 @@ io.on('connection', (socket) => {
       });
       console.log(`[SERVER] Emitting round_result to room ${roomId}:`, { moves: { 1: move1, 2: move2 }, result });
       rooms[roomId].moves = {};
+      console.log(`[SOCKET] Emitting to room ${roomId}: round_result`, { moves: { 1: move1, 2: move2 }, result });
     }
   });
 
@@ -214,10 +226,11 @@ io.on('connection', (socket) => {
     }
     delete playerRooms[socket.id];
     socket.leave(roomId);
+    console.log(`[SOCKET] Emitting to room ${roomId}: player_update ${rooms[roomId] ? rooms[roomId].players.length : 0}`);
   });
 
   socket.on('disconnect', (reason) => {
-    console.log('User disconnected:', socket.id, 'Reason:', reason);
+    console.log('[SOCKET] Client disconnected:', socket.id, 'Reason:', reason, 'at', new Date().toISOString());
     
     // Clean up rooms when players disconnect
     const roomId = playerRooms[socket.id];
@@ -248,13 +261,18 @@ io.on('connection', (socket) => {
     if (rooms[roomId]) {
       const started = rooms[roomId].players.length === 2;
       socket.emit('game_state', { started });
+      console.log(`[SOCKET] Emitting to ${socket.id}: game_state`, { started });
     } else {
       socket.emit('game_state', { started: false });
     }
   });
+
+  socket.on('error', (err) => {
+    console.error('[SOCKET] Error on socket', socket.id, err);
+  });
 });
 
 server.listen(PORT, () => {
-  console.log(`Socket.IO server running on port ${PORT}`);
-  console.log(`Server URL: ${process.env.NODE_ENV === 'production' ? 'https://rock-paper-scissors-multiplayer-w3f2.onrender.com' : `http://localhost:${PORT}`}`);
+  console.log(`[SERVER] Socket.IO server running on port ${PORT} at ${new Date().toISOString()}`);
+  console.log(`[SERVER] Server URL: ${process.env.NODE_ENV === 'production' ? 'https://rock-paper-scissors-multiplayer-w3f2.onrender.com' : `http://localhost:${PORT}`}`);
 }); 
