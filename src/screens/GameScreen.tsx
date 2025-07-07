@@ -31,7 +31,7 @@ export default function GameScreen() {
   const roomId = mode === 'multiplayer' ? route.params.roomId : undefined;
   const playerNumber = mode === 'multiplayer' && 'playerNumber' in route.params ? route.params.playerNumber : null;
   
-  const [gamePhase, setGamePhase] = useState<'waiting' | 'countdown' | 'playing' | 'result'>('waiting');
+  const [gamePhase, setGamePhase] = useState<'waiting' | 'countdown' | 'playing' | 'result' | 'opponent_left'>('waiting');
   const [countdown, setCountdown] = useState(3);
   const [playerChoice, setPlayerChoice] = useState<string | null>(null);
   const [opponentChoice, setOpponentChoice] = useState<string | null>(null);
@@ -39,6 +39,7 @@ export default function GameScreen() {
   const [scores, setScores] = useState({ wins: 0, losses: 0, ties: 0 });
   const [opponentMoved, setOpponentMoved] = useState(false);
   const [canPlayAgain, setCanPlayAgain] = useState(false);
+  const [showOpponentLeftModal, setShowOpponentLeftModal] = useState(false);
   
   const countdownAnimation = useRef(new Animated.Value(1)).current;
   const choiceAnimation = useRef(new Animated.Value(0)).current;
@@ -122,6 +123,12 @@ export default function GameScreen() {
       };
       socket.on('reconnect_failed', onReconnectFailed);
 
+      const onOpponentLeft = () => {
+        setShowOpponentLeftModal(true);
+        setGamePhase('opponent_left');
+      };
+      socket.on('opponent_left', onOpponentLeft);
+
       // Request game state on mount
       socket.emit('get_game_state', roomId);
 
@@ -139,6 +146,7 @@ export default function GameScreen() {
         socket.off('round_result', onRoundResult);
         socket.off('game_state', onGameState);
         socket.off('opponent_moved', onOpponentMoved);
+        socket.off('opponent_left', onOpponentLeft);
         // Do NOT emit leave_room here; only do so in handleQuit
       };
     } else if (mode === 'computer') {
@@ -344,60 +352,85 @@ export default function GameScreen() {
 
         {gamePhase === 'result' && (
           <View style={{ alignItems: 'center', marginTop: 32 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
-              {/* Player Choice Card */}
-              <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
-                <Text style={{ color: '#fff', fontSize: 16, marginBottom: 4 }}>You</Text>
-                <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: 80, alignItems: 'center' }}>
-                  <Text style={{ fontSize: 36 }}>
-                    {playerChoice === 'rock' ? '🪨' : playerChoice === 'paper' ? '📄' : playerChoice === 'scissors' ? '✂️' : ''}
+            {(playerChoice && opponentChoice) ? (
+              <>
+                <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
+                  {/* Player Choice Card */}
+                  <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
+                    <Text style={{ color: '#fff', fontSize: 16, marginBottom: 4 }}>You</Text>
+                    <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: 80, alignItems: 'center' }}>
+                      <Text style={{ fontSize: 36 }}>
+                        {playerChoice === 'rock' ? '🪨' : playerChoice === 'paper' ? '📄' : playerChoice === 'scissors' ? '✂️' : ''}
+                      </Text>
+                      <Text style={{ color: '#fff', fontSize: 16, marginTop: 8, textTransform: 'capitalize' }}>{playerChoice || ''}</Text>
+                    </View>
+                  </View>
+                  {/* VS */}
+                  <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold', marginHorizontal: 8 }}>VS</Text>
+                  {/* Opponent/Computer Choice Card */}
+                  <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
+                    <Text style={{ color: '#fff', fontSize: 16, marginBottom: 4 }}>{mode === 'computer' ? 'Computer' : 'Opponent'}</Text>
+                    <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: 80, alignItems: 'center' }}>
+                      <Text style={{ fontSize: 36 }}>
+                        {opponentChoice === 'rock' ? '🪨' : opponentChoice === 'paper' ? '📄' : opponentChoice === 'scissors' ? '✂️' : ''}
+                      </Text>
+                      <Text style={{ color: '#fff', fontSize: 16, marginTop: 8, textTransform: 'capitalize' }}>{opponentChoice || ''}</Text>
+                    </View>
+                  </View>
+                </View>
+                {/* Result Card */}
+                <View style={{
+                  backgroundColor: '#222a36',
+                  borderRadius: 16,
+                  padding: 24,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 6,
+                  alignItems: 'center',
+                  minWidth: 220,
+                  marginBottom: 16,
+                }}>
+                  <Text style={{ fontSize: 48, marginBottom: 8, textAlign: 'center' }}>
+                    {getResultIcon()}
                   </Text>
-                  <Text style={{ color: '#fff', fontSize: 16, marginTop: 8, textTransform: 'capitalize' }}>{playerChoice || ''}</Text>
+                  <Text style={{
+                    fontSize: 28,
+                    fontWeight: 'bold',
+                    marginBottom: 8,
+                    color: getResultColor(),
+                    textAlign: 'center',
+                  }}>
+                    {getResultText()}
+                  </Text>
+                </View>
+              </>
+            ) : (
+              <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
+                <Text style={{ color: '#fff', fontSize: 20, marginBottom: 12 }}>Waiting for result...</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                  <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#4facfe', margin: 4, opacity: 0.7 }} />
+                  <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#4facfe', margin: 4, opacity: 0.5 }} />
+                  <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#4facfe', margin: 4, opacity: 0.3 }} />
                 </View>
               </View>
-              {/* VS */}
-              <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold', marginHorizontal: 8 }}>VS</Text>
-              {/* Computer Choice Card */}
-              <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
-                <Text style={{ color: '#fff', fontSize: 16, marginBottom: 4 }}>Computer</Text>
-                <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: 80, alignItems: 'center' }}>
-                  <Text style={{ fontSize: 36 }}>
-                    {opponentChoice === 'rock' ? '🪨' : opponentChoice === 'paper' ? '📄' : opponentChoice === 'scissors' ? '✂️' : ''}
-                  </Text>
-                  <Text style={{ color: '#fff', fontSize: 16, marginTop: 8, textTransform: 'capitalize' }}>{opponentChoice || ''}</Text>
-                </View>
-              </View>
-            </View>
-            {/* Result Card */}
-            <View style={{
-              backgroundColor: '#222a36',
-              borderRadius: 16,
-              padding: 24,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.2,
-              shadowRadius: 8,
-              elevation: 6,
-              alignItems: 'center',
-              minWidth: 220,
-              marginBottom: 16,
-            }}>
-              <Text style={{ fontSize: 48, marginBottom: 8, textAlign: 'center' }}>
-                {getResultIcon()}
-              </Text>
-              <Text style={{
-                fontSize: 28,
-                fontWeight: 'bold',
-                marginBottom: 8,
-                color: getResultColor(),
-                textAlign: 'center',
-              }}>
-                {getResultText()}
-              </Text>
-            </View>
+            )}
             <Button title="Play Again" onPress={handlePlayAgain} disabled={!canPlayAgain} />
             <View style={{ height: 12 }} />
             <Button title="Quit" onPress={handleQuit} color="#d9534f" />
+          </View>
+        )}
+
+        {gamePhase === 'opponent_left' && showOpponentLeftModal && (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.7)' }}>
+            <View style={{ backgroundColor: '#222', borderRadius: 16, padding: 28, alignItems: 'center', width: '80%' }}>
+              <Text style={{ color: '#fff', fontSize: 22, fontWeight: 'bold', marginBottom: 12 }}>Opponent Left</Text>
+              <Text style={{ color: '#fff', fontSize: 16, marginBottom: 24, textAlign: 'center' }}>
+                Your opponent has left the game. The game is over.
+              </Text>
+              <Button title="Quit" onPress={handleQuit} color="#d9534f" />
+            </View>
           </View>
         )}
       </View>
