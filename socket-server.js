@@ -192,8 +192,14 @@ io.on('connection', (socket) => {
   });
 
   socket.on('make_move', ({ roomId, move, playerNumber }) => {
-    console.log(`[SERVER] Received move: playerNumber=${playerNumber}, move=${move}, roomId=${roomId}`);
     if (!rooms[roomId]) return;
+    // Block moves if less than 2 players
+    if (!rooms[roomId].players || rooms[roomId].players.length < 2) {
+      socket.emit('opponent_left');
+      console.log(`[SOCKET] Blocked move: only one player in room ${roomId}. Notifying player ${socket.id}`);
+      return;
+    }
+    console.log(`[SERVER] Received move: playerNumber=${playerNumber}, move=${move}, roomId=${roomId}`);
     // Always use string keys for player numbers
     rooms[roomId].moves[String(playerNumber)] = move;
     console.log(`[SERVER] Current moves for room ${roomId}:`, rooms[roomId].moves);

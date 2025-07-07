@@ -344,18 +344,43 @@ export default function GameScreen() {
 
         {gamePhase === 'result' && (
           <View style={{ alignItems: 'center', marginTop: 32 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
+              {/* Player Choice Card */}
+              <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
+                <Text style={{ color: '#fff', fontSize: 16, marginBottom: 4 }}>You</Text>
+                <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: 80, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 36 }}>
+                    {playerChoice === 'rock' ? '🪨' : playerChoice === 'paper' ? '📄' : playerChoice === 'scissors' ? '✂️' : ''}
+                  </Text>
+                  <Text style={{ color: '#fff', fontSize: 16, marginTop: 8, textTransform: 'capitalize' }}>{playerChoice || ''}</Text>
+                </View>
+              </View>
+              {/* VS */}
+              <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold', marginHorizontal: 8 }}>VS</Text>
+              {/* Computer Choice Card */}
+              <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
+                <Text style={{ color: '#fff', fontSize: 16, marginBottom: 4 }}>Computer</Text>
+                <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: 80, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 36 }}>
+                    {opponentChoice === 'rock' ? '🪨' : opponentChoice === 'paper' ? '📄' : opponentChoice === 'scissors' ? '✂️' : ''}
+                  </Text>
+                  <Text style={{ color: '#fff', fontSize: 16, marginTop: 8, textTransform: 'capitalize' }}>{opponentChoice || ''}</Text>
+                </View>
+              </View>
+            </View>
+            {/* Result Card */}
             <View style={{
               backgroundColor: '#222a36',
               borderRadius: 16,
-              padding: 32,
+              padding: 24,
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.2,
               shadowRadius: 8,
               elevation: 6,
               alignItems: 'center',
-              marginBottom: 24,
               minWidth: 220,
+              marginBottom: 16,
             }}>
               <Text style={{ fontSize: 48, marginBottom: 8, textAlign: 'center' }}>
                 {getResultIcon()}
