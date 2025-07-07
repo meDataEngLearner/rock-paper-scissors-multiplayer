@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   Dimensions,
+  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -34,7 +35,9 @@ export default function RoomScreen() {
   const [joinAttempts, setJoinAttempts] = useState(0);
   const maxJoinAttempts = 5;
   const joinRetryDelay = 700; // ms
-  const [playerNumber, setPlayerNumber] = useState<number | null>(null);
+  const [playerNumber, setPlayerNumber] = useState<number>(0);
+  const [opponentLeftModal, setOpponentLeftModal] = useState(false);
+  const [opponentTimeoutModal, setOpponentTimeoutModal] = useState(false);
 
   const socket = useSocket();
 
@@ -159,6 +162,16 @@ export default function RoomScreen() {
     };
     socket.on('room_not_found', onRoomNotFound);
 
+    const onOpponentLeft = () => {
+      setOpponentLeftModal(true);
+    };
+    socket.on('opponent_left', onOpponentLeft);
+
+    const onOpponentTimeout = () => {
+      setOpponentTimeoutModal(true);
+    };
+    socket.on('opponent_timeout', onOpponentTimeout);
+
     return () => {
       if (joinTimeout) clearTimeout(joinTimeout);
       console.log('[RoomScreen] Cleanup - leaving room');
@@ -177,6 +190,8 @@ export default function RoomScreen() {
       socket.off('reconnect_error', onReconnectError);
       socket.off('reconnect_failed', onReconnectFailed);
       socket.off('room_not_found', onRoomNotFound);
+      socket.off('opponent_left', onOpponentLeft);
+      socket.off('opponent_timeout', onOpponentTimeout);
     };
   }, [roomId, isHost, socket, joinAttempts, playerNumber]);
 
@@ -216,6 +231,19 @@ export default function RoomScreen() {
     } catch (error) {
       console.log('Error sharing:', error);
     }
+  };
+
+  // Modal action handlers
+  const handleRestart = () => {
+    setOpponentLeftModal(false);
+    setOpponentTimeoutModal(false);
+    // Optionally, you can implement a restart logic here
+    navigation.goBack();
+  };
+  const handleQuit = () => {
+    setOpponentLeftModal(false);
+    setOpponentTimeoutModal(false);
+    navigation.goBack();
   };
 
   return (
@@ -285,6 +313,54 @@ export default function RoomScreen() {
           )}
         </View>
       </View>
+      {/* Opponent Left Modal */}
+      <Modal
+        visible={opponentLeftModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleQuit}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#222', borderRadius: 16, padding: 28, alignItems: 'center', width: '80%' }}>
+            <Text style={{ color: '#fff', fontSize: 22, fontWeight: 'bold', marginBottom: 12 }}>Opponent Left</Text>
+            <Text style={{ color: '#fff', fontSize: 16, marginBottom: 24, textAlign: 'center' }}>
+              Your opponent has left the game. You can restart or quit.
+            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
+              <TouchableOpacity style={{ flex: 1, marginRight: 8, backgroundColor: '#4facfe', borderRadius: 8, padding: 12, alignItems: 'center' }} onPress={handleRestart}>
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Restart</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={{ flex: 1, marginLeft: 8, backgroundColor: '#e94560', borderRadius: 8, padding: 12, alignItems: 'center' }} onPress={handleQuit}>
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Quit</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      {/* Opponent Timeout Modal */}
+      <Modal
+        visible={opponentTimeoutModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleQuit}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#222', borderRadius: 16, padding: 28, alignItems: 'center', width: '80%' }}>
+            <Text style={{ color: '#fff', fontSize: 22, fontWeight: 'bold', marginBottom: 12 }}>Opponent Timeout</Text>
+            <Text style={{ color: '#fff', fontSize: 16, marginBottom: 24, textAlign: 'center' }}>
+              Your opponent did not respond in time. You can restart or quit.
+            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
+              <TouchableOpacity style={{ flex: 1, marginRight: 8, backgroundColor: '#4facfe', borderRadius: 8, padding: 12, alignItems: 'center' }} onPress={handleRestart}>
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Restart</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={{ flex: 1, marginLeft: 8, backgroundColor: '#e94560', borderRadius: 8, padding: 12, alignItems: 'center' }} onPress={handleQuit}>
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Quit</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 }

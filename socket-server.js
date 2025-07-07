@@ -39,6 +39,22 @@ const rooms = {}; // { roomId: { players: [socketId, ...], moves: {}, createdAt:
 const JOIN_TIMEOUT = 60000; // 60 seconds to join room
 const playerRooms = {}; // Track which room each player is in
 
+// Helper to start move timeout for a room
+function startMoveTimeout(roomId) {
+  if (!rooms[roomId]) return;
+  // Clear any existing timeout
+  if (rooms[roomId].moveTimeout) {
+    clearTimeout(rooms[roomId].moveTimeout);
+  }
+  rooms[roomId].moveTimeout = setTimeout(() => {
+    if (rooms[roomId] && (Object.keys(rooms[roomId].moves).length < 2)) {
+      io.to(roomId).emit('opponent_timeout');
+      rooms[roomId].moves = {};
+      console.log(`[SOCKET] Emitting to room ${roomId}: opponent_timeout due to move timeout`);
+    }
+  }, 30000); // 30 seconds
+}
+
 io.on('connection', (socket) => {
   console.log('[SOCKET] New client connected:', socket.id, 'at', new Date().toISOString());
   socket.onAny((event, ...args) => {
@@ -202,6 +218,13 @@ io.on('connection', (socket) => {
       console.log(`[SERVER] Emitting round_result to room ${roomId}:`, { moves: { 1: move1, 2: move2 }, result });
       rooms[roomId].moves = {};
       console.log(`[SOCKET] Emitting to room ${roomId}: round_result`, { moves: { 1: move1, 2: move2 }, result });
+      if (rooms[roomId].moveTimeout) {
+        clearTimeout(rooms[roomId].moveTimeout);
+        rooms[roomId].moveTimeout = null;
+      }
+    } else {
+      // Start or restart move timeout if only one move is present
+      startMoveTimeout(roomId);
     }
   });
 
@@ -222,6 +245,12 @@ io.on('connection', (socket) => {
       if (rooms[roomId].players.length === 0) {
         console.log(`Deleting empty room ${roomId}`);
         delete rooms[roomId];
+      }
+      // Notify remaining player if only one left
+      if (rooms[roomId].players.length === 1) {
+        const remainingPlayer = rooms[roomId].players[0];
+        io.to(remainingPlayer).emit('opponent_left');
+        console.log(`[SOCKET] Emitting to ${remainingPlayer}: opponent_left`);
       }
     }
     delete playerRooms[socket.id];
@@ -251,6 +280,12 @@ io.on('connection', (socket) => {
           delete rooms[roomId];
         } else {
           io.to(roomId).emit('player_update', room.players.length);
+        }
+        // Notify remaining player if only one left
+        if (room.players.length === 1) {
+          const remainingPlayer = room.players[0];
+          io.to(remainingPlayer).emit('opponent_left');
+          console.log(`[SOCKET] Emitting to ${remainingPlayer}: opponent_left`);
         }
       }
     }
