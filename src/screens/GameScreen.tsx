@@ -236,23 +236,41 @@ export default function GameScreen() {
   };
 
   const getResultText = () => {
-    if (roundResult === 'tie') return "It's a tie!";
-    if (roundResult === 'p1') return playerNumber === 1 ? "You win!" : "You lose!";
-    if (roundResult === 'p2') return playerNumber === 2 ? "You win!" : "You lose!";
+    if (mode === 'computer') {
+      if (roundResult === 'win') return "You win!";
+      if (roundResult === 'lose') return "You lose!";
+      if (roundResult === 'tie') return "It's a tie!";
+    } else {
+      if (roundResult === 'tie') return "It's a tie!";
+      if (roundResult === 'p1') return playerNumber === 1 ? "You win!" : "You lose!";
+      if (roundResult === 'p2') return playerNumber === 2 ? "You win!" : "You lose!";
+    }
     return '';
   };
 
   const getResultColor = () => {
-    if (roundResult === 'tie') return '#888'; // gray
-    if (roundResult === 'p1') return playerNumber === 1 ? '#28a745' : '#d9534f'; // green/red
-    if (roundResult === 'p2') return playerNumber === 2 ? '#28a745' : '#d9534f'; // green/red
+    if (mode === 'computer') {
+      if (roundResult === 'win') return '#28a745'; // green
+      if (roundResult === 'lose') return '#d9534f'; // red
+      if (roundResult === 'tie') return '#888'; // gray
+    } else {
+      if (roundResult === 'tie') return '#888';
+      if (roundResult === 'p1') return playerNumber === 1 ? '#28a745' : '#d9534f';
+      if (roundResult === 'p2') return playerNumber === 2 ? '#28a745' : '#d9534f';
+    }
     return '#fff';
   };
 
   const getResultIcon = () => {
-    if (roundResult === 'tie') return '🤝';
-    if (roundResult === 'p1') return playerNumber === 1 ? '🏆' : '😞';
-    if (roundResult === 'p2') return playerNumber === 2 ? '🏆' : '😞';
+    if (mode === 'computer') {
+      if (roundResult === 'win') return '🏆';
+      if (roundResult === 'lose') return '😞';
+      if (roundResult === 'tie') return '🤝';
+    } else {
+      if (roundResult === 'tie') return '🤝';
+      if (roundResult === 'p1') return playerNumber === 1 ? '🏆' : '😞';
+      if (roundResult === 'p2') return playerNumber === 2 ? '🏆' : '😞';
+    }
     return '';
   };
 
