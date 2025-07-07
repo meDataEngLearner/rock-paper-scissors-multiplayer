@@ -117,6 +117,7 @@ export default function RoomScreen() {
 
     const onGameStart = () => {
       console.log('[RoomScreen] Game starting!');
+      setOpponentLeftModal(false);
       console.log('[RoomScreen] Navigating to Game screen with mode: multiplayer, roomId:', roomId);
       navigation.replace('Game', { mode: 'multiplayer', roomId, playerNumber });
     };
@@ -163,7 +164,9 @@ export default function RoomScreen() {
     socket.on('room_not_found', onRoomNotFound);
 
     const onOpponentLeft = () => {
-      setOpponentLeftModal(true);
+      if (!opponentJoined) {
+        setOpponentLeftModal(true);
+      }
     };
     socket.on('opponent_left', onOpponentLeft);
 

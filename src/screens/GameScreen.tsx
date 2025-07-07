@@ -8,6 +8,7 @@ import {
   Alert,
   Animated,
   Button,
+  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -18,6 +19,8 @@ import { useSocket } from '../utils/SocketContext';
 import GameCard from '../components/GameCard';
 import ChoiceButton from '../components/ChoiceButton';
 import ScoreBoard from '../components/ScoreBoard';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getResponsiveFontSize } from '../utils/responsive';
 
 type GameScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Game'>;
 type GameScreenRouteProp = RouteProp<RootStackParamList, 'Game'>;
@@ -269,172 +272,176 @@ export default function GameScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={['#1a1a2e', '#16213e', '#0f3460']}
-      style={styles.container}
-    >
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        
-        <Text style={styles.title}>
-          {mode === 'multiplayer' ? 'Multiplayer' : 'Single Player'}
-        </Text>
-        
-        <View style={styles.placeholder} />
-      </View>
-
-      <ScoreBoard scores={scores} />
-
-      <View style={styles.gameArea}>
-        {gamePhase === 'waiting' && (
-          <View style={styles.waitingContainer}>
-            <View style={styles.loadingDots}>
-              <View style={styles.dot} />
-              <View style={styles.dot} />
-              <View style={styles.dot} />
-            </View>
-            <Text style={styles.waitingText}>Waiting for game to start...</Text>
-          </View>
-        )}
-
-        {gamePhase === 'countdown' && (
-          <View style={styles.countdownContainer}>
-            <Animated.Text
-              style={[
-                styles.countdownText,
-                {
-                  opacity: countdownAnimation,
-                  transform: [{ scale: countdownAnimation }],
-                },
-              ]}
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#1a1a2e' }}>
+      <LinearGradient
+        colors={['#1a1a2e', '#16213e', '#0f3460']}
+        style={styles.container}
+      >
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.7}
             >
-              {countdown}
-            </Animated.Text>
-          </View>
-        )}
-
-        {gamePhase === 'playing' && (
-          <View style={styles.playingContainer}>
-            <View style={styles.choicesContainer}>
-              <ChoiceButton
-                choice="rock"
-                onPress={() => handleChoice('rock')}
-                disabled={!!playerChoice}
-              />
-              <ChoiceButton
-                choice="paper"
-                onPress={() => handleChoice('paper')}
-                disabled={!!playerChoice}
-              />
-              <ChoiceButton
-                choice="scissors"
-                onPress={() => handleChoice('scissors')}
-                disabled={!!playerChoice}
-              />
-            </View>
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
             
-            {playerChoice && (
-              <View style={styles.waitingForOpponent}>
-                <Text style={styles.waitingText}>Waiting for opponent...</Text>
-                {opponentMoved && (
-                  <Text style={styles.opponentMovedText}>Opponent made their choice!</Text>
+            <Text style={styles.title}>
+              {mode === 'multiplayer' ? 'Multiplayer' : 'Single Player'}
+            </Text>
+            
+            <View style={styles.placeholder} />
+          </View>
+
+          <ScoreBoard scores={scores} />
+
+          <View style={styles.gameArea}>
+            {gamePhase === 'waiting' && (
+              <View style={styles.waitingContainer}>
+                <View style={styles.loadingDots}>
+                  <View style={styles.dot} />
+                  <View style={styles.dot} />
+                  <View style={styles.dot} />
+                </View>
+                <Text style={styles.waitingText}>Waiting for game to start...</Text>
+              </View>
+            )}
+
+            {gamePhase === 'countdown' && (
+              <View style={styles.countdownContainer}>
+                <Animated.Text
+                  style={[
+                    styles.countdownText,
+                    {
+                      opacity: countdownAnimation,
+                      transform: [{ scale: countdownAnimation }],
+                    },
+                  ]}
+                >
+                  {countdown}
+                </Animated.Text>
+              </View>
+            )}
+
+            {gamePhase === 'playing' && (
+              <View style={styles.playingContainer}>
+                <View style={styles.choicesContainer}>
+                  <ChoiceButton
+                    choice="rock"
+                    onPress={() => handleChoice('rock')}
+                    disabled={!!playerChoice}
+                  />
+                  <ChoiceButton
+                    choice="paper"
+                    onPress={() => handleChoice('paper')}
+                    disabled={!!playerChoice}
+                  />
+                  <ChoiceButton
+                    choice="scissors"
+                    onPress={() => handleChoice('scissors')}
+                    disabled={!!playerChoice}
+                  />
+                </View>
+                
+                {playerChoice && (
+                  <View style={styles.waitingForOpponent}>
+                    <Text style={styles.waitingText}>Waiting for opponent...</Text>
+                    {opponentMoved && (
+                      <Text style={styles.opponentMovedText}>Opponent made their choice!</Text>
+                    )}
+                  </View>
                 )}
               </View>
             )}
-          </View>
-        )}
 
-        {gamePhase === 'result' && (
-          <View style={{ alignItems: 'center', marginTop: 32 }}>
-            {(playerChoice && opponentChoice) ? (
-              <>
-                <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
-                  {/* Player Choice Card */}
-                  <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
-                    <Text style={{ color: '#fff', fontSize: 16, marginBottom: 4 }}>You</Text>
-                    <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: 80, alignItems: 'center' }}>
-                      <Text style={{ fontSize: 36 }}>
-                        {playerChoice === 'rock' ? '🪨' : playerChoice === 'paper' ? '📄' : playerChoice === 'scissors' ? '✂️' : ''}
+            {gamePhase === 'result' && (
+              <View style={{ alignItems: 'center', marginTop: 32 }}>
+                {(playerChoice && opponentChoice) ? (
+                  <>
+                    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
+                      {/* Player Choice Card */}
+                      <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
+                        <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginBottom: 4 }}>You</Text>
+                        <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: width * 0.4, alignItems: 'center' }}>
+                          <Text style={{ fontSize: getResponsiveFontSize(36) }}>
+                            {playerChoice === 'rock' ? '🪨' : playerChoice === 'paper' ? '📄' : playerChoice === 'scissors' ? '✂️' : ''}
+                          </Text>
+                          <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginTop: 8, textTransform: 'capitalize' }}>{playerChoice || ''}</Text>
+                        </View>
+                      </View>
+                      {/* VS */}
+                      <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(24), fontWeight: 'bold', marginHorizontal: 8 }}>VS</Text>
+                      {/* Opponent/Computer Choice Card */}
+                      <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
+                        <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginBottom: 4 }}>{mode === 'computer' ? 'Computer' : 'Opponent'}</Text>
+                        <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: width * 0.4, alignItems: 'center' }}>
+                          <Text style={{ fontSize: getResponsiveFontSize(36) }}>
+                            {opponentChoice === 'rock' ? '🪨' : opponentChoice === 'paper' ? '📄' : opponentChoice === 'scissors' ? '✂️' : ''}
+                          </Text>
+                          <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginTop: 8, textTransform: 'capitalize' }}>{opponentChoice || ''}</Text>
+                        </View>
+                      </View>
+                    </View>
+                    {/* Result Card */}
+                    <View style={{
+                      backgroundColor: '#222a36',
+                      borderRadius: 16,
+                      padding: 24,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.2,
+                      shadowRadius: 8,
+                      elevation: 6,
+                      alignItems: 'center',
+                      minWidth: width * 0.4,
+                      marginBottom: 16,
+                    }}>
+                      <Text style={{ fontSize: getResponsiveFontSize(48), marginBottom: 8, textAlign: 'center' }}>
+                        {getResultIcon()}
                       </Text>
-                      <Text style={{ color: '#fff', fontSize: 16, marginTop: 8, textTransform: 'capitalize' }}>{playerChoice || ''}</Text>
+                      <Text style={{
+                        fontSize: getResponsiveFontSize(28),
+                        fontWeight: 'bold',
+                        marginBottom: 8,
+                        color: getResultColor(),
+                        textAlign: 'center',
+                      }}>
+                        {getResultText()}
+                      </Text>
+                    </View>
+                  </>
+                ) : (
+                  <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
+                    <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(20), marginBottom: 12 }}>Waiting for result...</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                      <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#4facfe', margin: 4, opacity: 0.7 }} />
+                      <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#4facfe', margin: 4, opacity: 0.5 }} />
+                      <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#4facfe', margin: 4, opacity: 0.3 }} />
                     </View>
                   </View>
-                  {/* VS */}
-                  <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold', marginHorizontal: 8 }}>VS</Text>
-                  {/* Opponent/Computer Choice Card */}
-                  <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
-                    <Text style={{ color: '#fff', fontSize: 16, marginBottom: 4 }}>{mode === 'computer' ? 'Computer' : 'Opponent'}</Text>
-                    <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: 80, alignItems: 'center' }}>
-                      <Text style={{ fontSize: 36 }}>
-                        {opponentChoice === 'rock' ? '🪨' : opponentChoice === 'paper' ? '📄' : opponentChoice === 'scissors' ? '✂️' : ''}
-                      </Text>
-                      <Text style={{ color: '#fff', fontSize: 16, marginTop: 8, textTransform: 'capitalize' }}>{opponentChoice || ''}</Text>
-                    </View>
-                  </View>
-                </View>
-                {/* Result Card */}
-                <View style={{
-                  backgroundColor: '#222a36',
-                  borderRadius: 16,
-                  padding: 24,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 8,
-                  elevation: 6,
-                  alignItems: 'center',
-                  minWidth: 220,
-                  marginBottom: 16,
-                }}>
-                  <Text style={{ fontSize: 48, marginBottom: 8, textAlign: 'center' }}>
-                    {getResultIcon()}
+                )}
+                <Button title="Play Again" onPress={handlePlayAgain} disabled={!canPlayAgain} />
+                <View style={{ height: 12 }} />
+                <Button title="Quit" onPress={handleQuit} color="#d9534f" />
+              </View>
+            )}
+
+            {gamePhase === 'opponent_left' && showOpponentLeftModal && (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.7)' }}>
+                <View style={{ backgroundColor: '#222', borderRadius: 16, padding: 28, alignItems: 'center', width: '80%' }}>
+                  <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(22), fontWeight: 'bold', marginBottom: 12 }}>Opponent Left</Text>
+                  <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginBottom: 24, textAlign: 'center' }}>
+                    Your opponent has left the game. The game is over.
                   </Text>
-                  <Text style={{
-                    fontSize: 28,
-                    fontWeight: 'bold',
-                    marginBottom: 8,
-                    color: getResultColor(),
-                    textAlign: 'center',
-                  }}>
-                    {getResultText()}
-                  </Text>
-                </View>
-              </>
-            ) : (
-              <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
-                <Text style={{ color: '#fff', fontSize: 20, marginBottom: 12 }}>Waiting for result...</Text>
-                <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-                  <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#4facfe', margin: 4, opacity: 0.7 }} />
-                  <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#4facfe', margin: 4, opacity: 0.5 }} />
-                  <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#4facfe', margin: 4, opacity: 0.3 }} />
+                  <Button title="Quit" onPress={handleQuit} color="#d9534f" />
                 </View>
               </View>
             )}
-            <Button title="Play Again" onPress={handlePlayAgain} disabled={!canPlayAgain} />
-            <View style={{ height: 12 }} />
-            <Button title="Quit" onPress={handleQuit} color="#d9534f" />
           </View>
-        )}
-
-        {gamePhase === 'opponent_left' && showOpponentLeftModal && (
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.7)' }}>
-            <View style={{ backgroundColor: '#222', borderRadius: 16, padding: 28, alignItems: 'center', width: '80%' }}>
-              <Text style={{ color: '#fff', fontSize: 22, fontWeight: 'bold', marginBottom: 12 }}>Opponent Left</Text>
-              <Text style={{ color: '#fff', fontSize: 16, marginBottom: 24, textAlign: 'center' }}>
-                Your opponent has left the game. The game is over.
-              </Text>
-              <Button title="Quit" onPress={handleQuit} color="#d9534f" />
-            </View>
-          </View>
-        )}
-      </View>
-    </LinearGradient>
+        </ScrollView>
+      </LinearGradient>
+    </SafeAreaView>
   );
 }
 
@@ -450,12 +457,12 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   backButtonText: {
-    fontSize: 18,
+    fontSize: getResponsiveFontSize(18),
     fontWeight: 'bold',
     color: '#fff',
   },
   title: {
-    fontSize: 20,
+    fontSize: getResponsiveFontSize(20),
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
@@ -486,7 +493,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 2,
   },
   waitingText: {
-    fontSize: 18,
+    fontSize: getResponsiveFontSize(18),
     fontWeight: 'bold',
     color: '#fff',
     marginTop: 20,
@@ -497,7 +504,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   countdownText: {
-    fontSize: 40,
+    fontSize: getResponsiveFontSize(40),
     fontWeight: 'bold',
     color: '#fff',
   },
@@ -516,7 +523,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   opponentMovedText: {
-    fontSize: 18,
+    fontSize: getResponsiveFontSize(18),
     fontWeight: 'bold',
     color: '#fff',
   },
@@ -531,13 +538,13 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   vsText: {
-    fontSize: 20,
+    fontSize: getResponsiveFontSize(20),
     fontWeight: 'bold',
     color: '#fff',
     marginHorizontal: 20,
   },
      resultText: {
-     fontSize: 24,
+     fontSize: getResponsiveFontSize(24),
      fontWeight: 'bold',
      color: '#fff',
      marginTop: 20,
@@ -550,12 +557,12 @@ const styles = StyleSheet.create({
      minWidth: 100,
    },
    choiceTitle: {
-     fontSize: 16,
+     fontSize: getResponsiveFontSize(16),
      fontWeight: 'bold',
      color: '#fff',
      marginBottom: 10,
    },
    choiceEmoji: {
-     fontSize: 40,
+     fontSize: getResponsiveFontSize(40),
    },
  }); 
