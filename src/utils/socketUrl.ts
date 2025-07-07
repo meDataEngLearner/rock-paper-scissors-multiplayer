@@ -6,14 +6,10 @@ const PRODUCTION_URL = 'https://rock-paper-scissors-multiplayer-w3f2.onrender.co
 const LAN_URL = 'http://192.168.1.7:3001'; // Local LAN IP for development
 
 /**
- * Returns the correct Socket.IO server URL based on environment.
- * Update PRODUCTION_URL and LAN_URL above as needed.
+ * Returns the correct Socket.IO server URL.
+ * FORCED to production for Expo Go testing. Restore logic for local dev as needed.
  */
 export const getSocketServerUrl = () => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Socket] Connecting to local dev server:', LAN_URL);
-    return LAN_URL;
-  }
-  console.log('[Socket] Connecting to production server:', PRODUCTION_URL);
+  console.log('[Socket] Connecting to production server (forced for Expo Go):', PRODUCTION_URL);
   return PRODUCTION_URL;
 }; 
