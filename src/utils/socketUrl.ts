@@ -1,19 +1,19 @@
 // Utility to get the correct Socket.IO server URL for emulator, real device, or production
 import { Platform } from 'react-native';
 
-// CHANGE THESE URLs based on your deployment
-// Replace this with your actual Render URL after deployment
-const PRODUCTION_URL = 'https://rock-paper-scissors-multiplayer-w3f2.onrender.com'; // Your deployed Render server
-const LAN_IP = '192.168.1.7'; // Your local LAN IP for development
-const PORT = '3001';
+// Set these constants to your actual deployment URLs
+const PRODUCTION_URL = 'https://rock-paper-scissors-multiplayer-w3f2.onrender.com'; // Render server
+const LAN_URL = 'http://192.168.1.7:3001'; // Local LAN IP for development
 
+/**
+ * Returns the correct Socket.IO server URL based on environment.
+ * Update PRODUCTION_URL and LAN_URL above as needed.
+ */
 export const getSocketServerUrl = () => {
-  const url = 'https://rock-paper-scissors-multiplayer-w3f2.onrender.com'; // or your Render URL
-  console.log('[Socket] Connecting to socket server URL:', url);
   if (process.env.NODE_ENV === 'development') {
-    // Use local server for development
-    return 'http://192.168.1.7:3001';
+    console.log('[Socket] Connecting to local dev server:', LAN_URL);
+    return LAN_URL;
   }
-  // Use Render server for production
-  return 'https://rock-paper-scissors-multiplayer-w3f2.onrender.com';
+  console.log('[Socket] Connecting to production server:', PRODUCTION_URL);
+  return PRODUCTION_URL;
 }; 
