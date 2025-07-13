@@ -42,6 +42,7 @@ export default function RoomScreen() {
 
   // Add a ref to store the latest playerNumber
   const latestPlayerNumber = useRef<number>(0);
+  const isNavigatingToGame = useRef(false);
 
   const socket = useSocket();
   const hasJoinedOrCreatedRoom = useRef(false);
@@ -188,7 +189,7 @@ export default function RoomScreen() {
     return () => {
       if (joinTimeout) clearTimeout(joinTimeout);
       console.log('[RoomScreen] Cleanup - leaving room');
-      if (hasJoinedOrCreatedRoom.current) {
+      if (hasJoinedOrCreatedRoom.current && !isNavigatingToGame.current) {
         socket.emit('leave_room', roomId);
       }
       // Remove all listeners for this screen
@@ -230,6 +231,7 @@ export default function RoomScreen() {
   // Add a useEffect to navigate when playerNumber is set and opponentJoined is true
   useEffect(() => {
     if (hasNavigated && latestPlayerNumber.current && opponentJoined) {
+      isNavigatingToGame.current = true;
       console.log('[RoomScreen] Navigating to Game screen with mode: multiplayer, roomId:', roomId, 'playerNumber:', latestPlayerNumber.current);
       navigation.replace('Game', { mode: 'multiplayer', roomId, playerNumber: latestPlayerNumber.current });
     }
