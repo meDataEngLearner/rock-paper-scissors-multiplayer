@@ -169,21 +169,27 @@ export default function GameScreen() {
     }
   }, [mode, roomId, socket]);
 
-  // Countdown effect for opponent left
+  // Robust countdown effect for opponent left
   useEffect(() => {
-    if (gamePhase === 'opponent_left' && showOpponentLeftModal && opponentLeftCountdown !== null) {
+    if (showOpponentLeftModal && typeof opponentLeftCountdown === 'number') {
       if (opponentLeftCountdown === 0) {
         setShowOpponentLeftModal(false);
         setOpponentLeftCountdown(null);
+        setGamePhase('waiting');
+        setPlayerChoice(null);
+        setOpponentChoice(null);
+        setRoundResult(null);
+        setOpponentMoved(false);
+        setCanPlayAgain(false);
         navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
         return;
       }
       const timer = setTimeout(() => {
-        setOpponentLeftCountdown((prev) => (prev !== null ? prev - 1 : null));
+        setOpponentLeftCountdown((prev) => (typeof prev === 'number' ? prev - 1 : null));
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [gamePhase, showOpponentLeftModal, opponentLeftCountdown, navigation]);
+  }, [showOpponentLeftModal, opponentLeftCountdown, navigation]);
 
   const startCountdown = () => {
     setCountdown(3);
@@ -546,6 +552,19 @@ export default function GameScreen() {
                 </View>
                 <Text style={{ fontSize: 16, color: '#888' }}>Returning to Home...</Text>
               </View>
+              <TouchableOpacity style={{ marginTop: 12, backgroundColor: '#4facfe', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 24 }} onPress={() => {
+                setShowOpponentLeftModal(false);
+                setOpponentLeftCountdown(null);
+                setGamePhase('waiting');
+                setPlayerChoice(null);
+                setOpponentChoice(null);
+                setRoundResult(null);
+                setOpponentMoved(false);
+                setCanPlayAgain(false);
+                navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+              }}>
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Go to Home</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>
