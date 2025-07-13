@@ -40,6 +40,9 @@ export default function RoomScreen() {
   const [opponentTimeoutModal, setOpponentTimeoutModal] = useState(false);
   const [hasNavigated, setHasNavigated] = useState(false);
 
+  // Add a ref to store the latest playerNumber
+  const latestPlayerNumber = useRef<number>(0);
+
   const socket = useSocket();
   const hasJoinedOrCreatedRoom = useRef(false);
 
@@ -115,6 +118,7 @@ export default function RoomScreen() {
 
     const onPlayerNumber = (num: number) => {
       setPlayerNumber(num);
+      latestPlayerNumber.current = num;
       console.log('[RoomScreen] Received player number:', num);
     };
     socket.on('player_number', onPlayerNumber);
@@ -225,11 +229,11 @@ export default function RoomScreen() {
 
   // Add a useEffect to navigate when playerNumber is set and opponentJoined is true
   useEffect(() => {
-    if (hasNavigated && playerNumber && opponentJoined) {
-      console.log('[RoomScreen] Navigating to Game screen with mode: multiplayer, roomId:', roomId, 'playerNumber:', playerNumber);
-      navigation.replace('Game', { mode: 'multiplayer', roomId, playerNumber });
+    if (hasNavigated && latestPlayerNumber.current && opponentJoined) {
+      console.log('[RoomScreen] Navigating to Game screen with mode: multiplayer, roomId:', roomId, 'playerNumber:', latestPlayerNumber.current);
+      navigation.replace('Game', { mode: 'multiplayer', roomId, playerNumber: latestPlayerNumber.current });
     }
-  }, [hasNavigated, playerNumber, opponentJoined]);
+  }, [hasNavigated, opponentJoined]);
 
   const handleCopyRoomId = async () => {
     try {
