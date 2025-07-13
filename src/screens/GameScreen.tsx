@@ -136,11 +136,9 @@ export default function GameScreen() {
       socket.on('reconnect_failed', onReconnectFailed);
 
       const onOpponentLeft = () => {
-        if (gamePhase === 'playing' || gamePhase === 'result' || gamePhase === 'countdown') {
-          setShowOpponentLeftModal(true);
-          setGamePhase('opponent_left');
-          setOpponentLeftCountdown(3);
-        }
+        setShowOpponentLeftModal(true);
+        setGamePhase('opponent_left');
+        setOpponentLeftCountdown(3);
       };
       socket.on('opponent_left', onOpponentLeft);
 
