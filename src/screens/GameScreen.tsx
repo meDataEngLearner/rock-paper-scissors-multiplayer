@@ -52,6 +52,7 @@ export default function GameScreen() {
   
   const countdownAnimation = useRef(new Animated.Value(1)).current;
   const choiceAnimation = useRef(new Animated.Value(0)).current;
+  const autoRestartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const socket = useSocket();
 
@@ -101,8 +102,8 @@ export default function GameScreen() {
         } else if (data.result === 'tie') {
           setScores(prev => ({ ...prev, ties: prev.ties + 1 }));
         }
-        // Reset for next round after 3 seconds
-        setTimeout(() => {
+        // Reset for next round after 3 seconds - store timeout in ref
+        autoRestartTimeoutRef.current = setTimeout(() => {
           setPlayerChoice(null);
           setOpponentChoice(null);
           setRoundResult(null);
@@ -155,6 +156,11 @@ export default function GameScreen() {
 
       // Only clean up listeners on unmount, do not emit leave_room automatically
       return () => {
+        // Clear any pending automatic restart
+        if (autoRestartTimeoutRef.current) {
+          clearTimeout(autoRestartTimeoutRef.current);
+          autoRestartTimeoutRef.current = null;
+        }
         // Remove listeners only
         socket.off('round_result', onRoundResult);
         socket.off('game_state', onGameState);
@@ -281,7 +287,8 @@ export default function GameScreen() {
         } else {
           setScores(prev => ({ ...prev, ties: prev.ties + 1 }));
         }
-        setTimeout(() => {
+        // Auto restart for single player - store timeout in ref
+        autoRestartTimeoutRef.current = setTimeout(() => {
           startSinglePlayerRound();
         }, 2000);
       }, 500);
@@ -328,11 +335,28 @@ export default function GameScreen() {
   };
 
   const handlePlayAgain = () => {
+    // Cancel any pending automatic round restart
+    if (autoRestartTimeoutRef.current) {
+      clearTimeout(autoRestartTimeoutRef.current);
+      autoRestartTimeoutRef.current = null;
+    }
+    
+    // Reset game state
     setPlayerChoice(null);
     setOpponentChoice(null);
     setRoundResult(null);
-    setGamePhase('playing');
+    setOpponentMoved(false);
     setCanPlayAgain(false);
+    
+    // Start new round with proper countdown for both modes
+    if (mode === 'multiplayer') {
+      // For multiplayer, go to countdown phase
+      setGamePhase('countdown');
+      startCountdown();
+    } else {
+      // For single player, use the existing single player round function
+      startSinglePlayerRound();
+    }
   };
 
   const handleQuit = () => {

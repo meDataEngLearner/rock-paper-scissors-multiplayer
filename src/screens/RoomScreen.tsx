@@ -167,7 +167,10 @@ export default function RoomScreen() {
     socket.on('room_not_found', onRoomNotFound);
 
     const onOpponentLeft = () => {
-      setOpponentLeftModal(true);
+      // Only show the modal if the opponent had already joined
+      if (opponentJoined) {
+        setOpponentLeftModal(true);
+      }
     };
     socket.on('opponent_left', onOpponentLeft);
 
@@ -197,7 +200,7 @@ export default function RoomScreen() {
       socket.off('opponent_left', onOpponentLeft);
       socket.off('opponent_timeout', onOpponentTimeout);
     };
-  }, [roomId, isHost, socket, joinAttempts, playerNumber]);
+  }, [roomId, isHost, socket, joinAttempts, playerNumber, opponentJoined]);
 
   // Countdown timer for room timeout
   useEffect(() => {
