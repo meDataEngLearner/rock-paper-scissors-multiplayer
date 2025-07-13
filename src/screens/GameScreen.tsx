@@ -11,6 +11,7 @@ import {
   ScrollView,
   Modal,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -400,18 +401,8 @@ export default function GameScreen() {
 
             {gamePhase === 'countdown' && (
               <View style={styles.countdownContainer}>
-                <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: '#e0e0e0', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
-                  <Animated.Text
-                    style={{
-                      fontSize: 72,
-                      fontWeight: 'bold',
-                      color: '#764ba2',
-                      opacity: countdownAnimation,
-                      transform: [{ scale: countdownAnimation }],
-                    }}
-                  >
-                    {countdown}
-                  </Animated.Text>
+                <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
+                  <ActivityIndicator size="large" color="#222" />
                 </View>
                 <Text style={{ fontSize: 20, color: '#888', marginTop: 8 }}>Get Ready!</Text>
               </View>
