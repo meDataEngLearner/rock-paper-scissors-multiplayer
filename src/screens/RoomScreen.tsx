@@ -167,9 +167,7 @@ export default function RoomScreen() {
     socket.on('room_not_found', onRoomNotFound);
 
     const onOpponentLeft = () => {
-      if (!opponentJoined) {
-        setOpponentLeftModal(true);
-      }
+      setOpponentLeftModal(true);
     };
     socket.on('opponent_left', onOpponentLeft);
 
@@ -330,16 +328,11 @@ export default function RoomScreen() {
           <View style={{ backgroundColor: '#222', borderRadius: 16, padding: 28, alignItems: 'center', width: '80%' }}>
             <Text style={{ color: '#fff', fontSize: 22, fontWeight: 'bold', marginBottom: 12 }}>Opponent Left</Text>
             <Text style={{ color: '#fff', fontSize: 16, marginBottom: 24, textAlign: 'center' }}>
-              Your opponent has left the game. You can restart or quit.
+              Your opponent has left the room. Please create a new room to continue.
             </Text>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
-              <TouchableOpacity style={{ flex: 1, marginRight: 8, backgroundColor: '#4facfe', borderRadius: 8, padding: 12, alignItems: 'center' }} onPress={handleRestart}>
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Restart</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={{ flex: 1, marginLeft: 8, backgroundColor: '#e94560', borderRadius: 8, padding: 12, alignItems: 'center' }} onPress={handleQuit}>
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Quit</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={{ backgroundColor: '#4facfe', borderRadius: 8, padding: 14, alignItems: 'center', width: '80%' }} onPress={() => { setOpponentLeftModal(false); navigation.navigate('Home'); }}>
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>Go to Home</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
