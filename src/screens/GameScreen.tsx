@@ -69,7 +69,8 @@ export default function GameScreen() {
   useEffect(() => {
     if (mode === 'multiplayer' && roomId && socket) {
       console.log('[GameScreen] Connecting to multiplayer game, room:', roomId);
-      socket.emit('join_room', roomId);
+      // DO NOT emit join_room here; player is already in the room from RoomScreen
+      // socket.emit('join_room', roomId);
 
       const onConnect = () => {
         console.log('[GameScreen] Connected to server');
