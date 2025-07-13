@@ -47,7 +47,8 @@ function startMoveTimeout(roomId) {
     clearTimeout(rooms[roomId].moveTimeout);
   }
   rooms[roomId].moveTimeout = setTimeout(() => {
-    if (rooms[roomId] && (Object.keys(rooms[roomId].moves).length < 2)) {
+    if (!rooms[roomId]) return;
+    if (Object.keys(rooms[roomId].moves).length < 2) {
       io.to(roomId).emit('opponent_timeout');
       rooms[roomId].moves = {};
       console.log(`[SOCKET] Emitting to room ${roomId}: opponent_timeout due to move timeout`);
@@ -101,11 +102,10 @@ io.on('connection', (socket) => {
     
     // Set timeout to clear room if no second player joins
     rooms[roomId].joinTimeout = setTimeout(() => {
+      if (!rooms[roomId]) return;
       console.log(`Room ${roomId} timed out, clearing`);
-      if (rooms[roomId]) {
-        delete rooms[roomId];
-        io.to(roomId).emit('room_timeout');
-      }
+      delete rooms[roomId];
+      io.to(roomId).emit('room_timeout');
     }, JOIN_TIMEOUT);
     
     socket.emit('room_created', roomId);
@@ -184,6 +184,7 @@ io.on('connection', (socket) => {
       
       // Add a small delay to ensure all clients are ready
       setTimeout(() => {
+        if (!rooms[roomId]) return;
         console.log(`Emitting game_start to room ${roomId} after delay`);
         rooms[roomId].gameStarted = true;
         io.to(roomId).emit('game_start');

@@ -49,6 +49,8 @@ export default function GameScreen() {
   const [showOpponentLeftModal, setShowOpponentLeftModal] = useState(false);
   const [gameHasStarted, setGameHasStarted] = useState(false);
   const [opponentLeftCountdown, setOpponentLeftCountdown] = useState<number | null>(null);
+  const [showResultPopup, setShowResultPopup] = useState(false);
+  const resultPopupAnim = useRef(new Animated.Value(0)).current;
   
   const countdownAnimation = useRef(new Animated.Value(1)).current;
   const choiceAnimation = useRef(new Animated.Value(0)).current;
@@ -92,6 +94,17 @@ export default function GameScreen() {
         setRoundResult(data.result);
         setGamePhase('result');
         setCanPlayAgain(true);
+        // Show animated result pop-up
+        setShowResultPopup(true);
+        resultPopupAnim.setValue(0);
+        Animated.timing(resultPopupAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+        setTimeout(() => {
+          setShowResultPopup(false);
+        }, 1000);
         // Update scores
         if (data.result === 'p1' && playerNumber === 1) {
           setScores(prev => ({ ...prev, wins: prev.wins + 1 }));
@@ -279,6 +292,16 @@ export default function GameScreen() {
         }
         setRoundResult(result);
         setGamePhase('result');
+        setShowResultPopup(true);
+        resultPopupAnim.setValue(0);
+        Animated.timing(resultPopupAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+        setTimeout(() => {
+          setShowResultPopup(false);
+        }, 1000);
         // Update scores
         if (result === 'win') {
           setScores(prev => ({ ...prev, wins: prev.wins + 1 }));
@@ -496,7 +519,7 @@ export default function GameScreen() {
                       </View>
                     </View>
                     {/* Result Card */}
-                    <View style={{
+                    <Animated.View style={{
                       backgroundColor: '#222a36',
                       borderRadius: 16,
                       padding: 24,
@@ -508,6 +531,8 @@ export default function GameScreen() {
                       alignItems: 'center',
                       minWidth: width * 0.4,
                       marginBottom: 16,
+                      opacity: resultPopupAnim,
+                      transform: [{ scale: resultPopupAnim }],
                     }}>
                       <Text style={{ fontSize: getResponsiveFontSize(48), marginBottom: 8, textAlign: 'center' }}>
                         {getResultIcon()}
@@ -521,7 +546,7 @@ export default function GameScreen() {
                       }}>
                         {getResultText()}
                       </Text>
-                    </View>
+                    </Animated.View>
                   </>
                 ) : (
                   <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
@@ -533,9 +558,44 @@ export default function GameScreen() {
                     </View>
                   </View>
                 )}
-                <Button title="Play Again" onPress={handlePlayAgain} disabled={!canPlayAgain} />
-                <View style={{ height: 12 }} />
-                <Button title="Quit" onPress={handleQuit} color="#d9534f" />
+                {showResultPopup && (
+                  <View style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.4)',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 10,
+                  }}>
+                    <Animated.View style={{
+                      backgroundColor: '#fff',
+                      borderRadius: 24,
+                      padding: 32,
+                      alignItems: 'center',
+                      opacity: resultPopupAnim,
+                      transform: [{ scale: resultPopupAnim }],
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.2,
+                      shadowRadius: 8,
+                      elevation: 8,
+                    }}>
+                      <Text style={{ fontSize: getResponsiveFontSize(56), marginBottom: 8 }}>{getResultIcon()}</Text>
+                      <Text style={{ fontSize: getResponsiveFontSize(28), fontWeight: 'bold', color: getResultColor(), textAlign: 'center' }}>{getResultText()}</Text>
+                    </Animated.View>
+                  </View>
+                )}
+                {/* Only show Play Again/Quit when not showing popup */}
+                {!showResultPopup && canPlayAgain && (
+                  <>
+                    <Button title="Play Again" onPress={handlePlayAgain} />
+                    <View style={{ height: 12 }} />
+                    <Button title="Quit" onPress={handleQuit} color="#d9534f" />
+                  </>
+                )}
               </View>
             )}
 

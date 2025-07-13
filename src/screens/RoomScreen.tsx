@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -41,6 +41,7 @@ export default function RoomScreen() {
   const [hasNavigated, setHasNavigated] = useState(false);
 
   const socket = useSocket();
+  const hasJoinedOrCreatedRoom = useRef(false);
 
   useEffect(() => {
     if (!socket) return;
@@ -65,6 +66,7 @@ export default function RoomScreen() {
         console.log('[RoomScreen] I am the HOST, creating room:', roomId);
         console.log('[RoomScreen] Emitting create_room for:', roomId);
         socket.emit('create_room', roomId);
+        hasJoinedOrCreatedRoom.current = true;
       } else {
         tryJoinRoom(1);
       }
@@ -78,6 +80,7 @@ export default function RoomScreen() {
     const onRoomCreated = (createdRoomId: string) => {
       console.log('[RoomScreen] Room created:', createdRoomId);
       setIsRoomCreated(true);
+      hasJoinedOrCreatedRoom.current = true;
     };
     socket.on('room_created', onRoomCreated);
 
@@ -182,7 +185,9 @@ export default function RoomScreen() {
     return () => {
       if (joinTimeout) clearTimeout(joinTimeout);
       console.log('[RoomScreen] Cleanup - leaving room');
-      socket.emit('leave_room', roomId);
+      if (hasJoinedOrCreatedRoom.current) {
+        socket.emit('leave_room', roomId);
+      }
       // Remove all listeners for this screen
       socket.off('connect', onConnect);
       socket.off('room_created', onRoomCreated);
@@ -200,7 +205,7 @@ export default function RoomScreen() {
       socket.off('opponent_left', onOpponentLeft);
       socket.off('opponent_timeout', onOpponentTimeout);
     };
-  }, [roomId, isHost, socket, joinAttempts, playerNumber, opponentJoined]);
+  }, [roomId, isHost, socket]);
 
   // Countdown timer for room timeout
   useEffect(() => {
