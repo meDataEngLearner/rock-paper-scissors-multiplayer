@@ -23,7 +23,7 @@ import ChoiceButton from '../components/ChoiceButton';
 import ScoreBoard from '../components/ScoreBoard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getResponsiveFontSize } from '../utils/responsive';
-import { getRandomHandImage } from '../utils/handImages';
+// Remove import { getRandomHandImage } from '../utils/handImages';
 
 type GameScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Game'>;
 type GameScreenRouteProp = RouteProp<RootStackParamList, 'Game'>;
@@ -352,6 +352,15 @@ export default function GameScreen() {
     navigation.goBack();
   };
 
+  const getChoiceEmoji = (choice: string): string => {
+    switch (choice) {
+      case 'rock': return '✊';
+      case 'paper': return '✋';
+      case 'scissors': return '✌';
+      default: return '';
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#1a1a2e' }}>
       <LinearGradient
@@ -448,9 +457,9 @@ export default function GameScreen() {
                       <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
                         <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginBottom: 4 }}>You</Text>
                         <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: width * 0.4, alignItems: 'center' }}>
-                          {['rock', 'paper', 'scissors'].includes(playerChoice) && (
-                            <Image source={getRandomHandImage(playerChoice as 'rock' | 'paper' | 'scissors')} style={{ width: 56, height: 56, marginBottom: 5 }} resizeMode="contain" />
-                          )}
+                          <Text style={{ fontSize: getResponsiveFontSize(36) }}>
+                            {getChoiceEmoji(playerChoice)}
+                          </Text>
                           <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginTop: 8, textTransform: 'capitalize' }}>{playerChoice || ''}</Text>
                         </View>
                       </View>
@@ -460,9 +469,9 @@ export default function GameScreen() {
                       <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
                         <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginBottom: 4 }}>{mode === 'computer' ? 'Computer' : 'Opponent'}</Text>
                         <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: width * 0.4, alignItems: 'center' }}>
-                          {['rock', 'paper', 'scissors'].includes(opponentChoice) && (
-                            <Image source={getRandomHandImage(opponentChoice as 'rock' | 'paper' | 'scissors')} style={{ width: 56, height: 56, marginBottom: 5 }} resizeMode="contain" />
-                          )}
+                          <Text style={{ fontSize: getResponsiveFontSize(36) }}>
+                            {getChoiceEmoji(opponentChoice)}
+                          </Text>
                           <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginTop: 8, textTransform: 'capitalize' }}>{opponentChoice || ''}</Text>
                         </View>
                       </View>
