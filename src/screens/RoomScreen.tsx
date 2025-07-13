@@ -122,10 +122,9 @@ export default function RoomScreen() {
     const onGameStart = () => {
       if (hasNavigated) return; // Prevent multiple navigations
       setHasNavigated(true);
-      console.log('[RoomScreen] Game starting!');
       setOpponentLeftModal(false);
-      console.log('[RoomScreen] Navigating to Game screen with mode: multiplayer, roomId:', roomId);
-      navigation.replace('Game', { mode: 'multiplayer', roomId, playerNumber });
+      // Only set a flag, navigation will be handled in a useEffect
+      console.log('[RoomScreen] Game starting!');
     };
     socket.on('game_start', onGameStart);
 
@@ -223,6 +222,14 @@ export default function RoomScreen() {
       return () => clearInterval(timer);
     }
   }, [isHost, isRoomCreated, opponentJoined]);
+
+  // Add a useEffect to navigate when playerNumber is set and opponentJoined is true
+  useEffect(() => {
+    if (hasNavigated && playerNumber && opponentJoined) {
+      console.log('[RoomScreen] Navigating to Game screen with mode: multiplayer, roomId:', roomId, 'playerNumber:', playerNumber);
+      navigation.replace('Game', { mode: 'multiplayer', roomId, playerNumber });
+    }
+  }, [hasNavigated, playerNumber, opponentJoined]);
 
   const handleCopyRoomId = async () => {
     try {

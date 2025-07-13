@@ -38,6 +38,14 @@ export default function GameScreen() {
   const roomId = mode === 'multiplayer' ? route.params.roomId : undefined;
   const playerNumber = mode === 'multiplayer' && 'playerNumber' in route.params ? route.params.playerNumber : null;
   
+  if (mode === 'multiplayer' && (!playerNumber || playerNumber < 1)) {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a2e' }}>
+        <Text style={{ color: '#fff', fontSize: 20 }}>Error: Player number not set. Please rejoin the room.</Text>
+      </SafeAreaView>
+    );
+  }
+
   const [gamePhase, setGamePhase] = useState<'waiting' | 'countdown' | 'playing' | 'result' | 'opponent_left'>('waiting');
   const [countdown, setCountdown] = useState(3);
   const [playerChoice, setPlayerChoice] = useState<string | null>(null);
@@ -263,6 +271,7 @@ export default function GameScreen() {
 
   const handleChoice = (choice: string) => {
     if (gamePhase !== 'playing' || playerChoice) return;
+    if (mode === 'multiplayer' && (!playerNumber || playerNumber < 1)) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setPlayerChoice(choice);
     Animated.timing(choiceAnimation, {
