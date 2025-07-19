@@ -502,72 +502,62 @@ export default function GameScreen() {
 
             {gamePhase === 'result' && (
               <View style={{ alignItems: 'center', marginTop: 32 }}>
-                {(playerChoice && opponentChoice) ? (
-                  <>
-                    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
-                      {/* Player Choice Card */}
-                      <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
-                        <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginBottom: 4 }}>You</Text>
-                        <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: width * 0.4, alignItems: 'center' }}>
-                          <Text style={{ fontSize: getResponsiveFontSize(36) }}>
-                            {getChoiceEmoji(playerChoice)}
-                          </Text>
-                          <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginTop: 8, textTransform: 'capitalize' }}>{playerChoice || ''}</Text>
-                        </View>
-                      </View>
-                      {/* VS */}
-                      <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(24), fontWeight: 'bold', marginHorizontal: 8 }}>VS</Text>
-                      {/* Opponent/Computer Choice Card */}
-                      <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
-                        <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginBottom: 4 }}>{mode === 'computer' ? 'Computer' : 'Opponent'}</Text>
-                        <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: width * 0.4, alignItems: 'center' }}>
-                          <Text style={{ fontSize: getResponsiveFontSize(36) }}>
-                            {getChoiceEmoji(opponentChoice)}
-                          </Text>
-                          <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginTop: 8, textTransform: 'capitalize' }}>{opponentChoice || ''}</Text>
-                        </View>
+                {(playerChoice && opponentChoice) && (
+                  <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
+                    {/* Player Choice Card */}
+                    <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
+                      <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginBottom: 4 }}>You</Text>
+                      <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: width * 0.4, alignItems: 'center' }}>
+                        <Text style={{ fontSize: getResponsiveFontSize(36) }}>
+                          {getChoiceEmoji(playerChoice)}
+                        </Text>
+                        <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginTop: 8, textTransform: 'capitalize' }}>{playerChoice || ''}</Text>
                       </View>
                     </View>
-                    {/* Result Card */}
-                    <Animated.View style={{
-                      backgroundColor: '#222a36',
-                      borderRadius: 16,
-                      padding: 24,
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.2,
-                      shadowRadius: 8,
-                      elevation: 6,
-                      alignItems: 'center',
-                      minWidth: width * 0.4,
-                      marginBottom: 16,
-                      opacity: resultPopupAnim,
-                      transform: [{ scale: resultPopupAnim }],
-                    }}>
-                      <Text style={{ fontSize: getResponsiveFontSize(48), marginBottom: 8, textAlign: 'center' }}>
-                        {getResultIcon()}
-                      </Text>
-                      <Text style={{
-                        fontSize: getResponsiveFontSize(28),
-                        fontWeight: 'bold',
-                        marginBottom: 8,
-                        color: getResultColor(),
-                        textAlign: 'center',
-                      }}>
-                        {getResultText()}
-                      </Text>
-                    </Animated.View>
-                  </>
-                ) : (
-                  <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
-                    <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(20), marginBottom: 12 }}>Waiting for result...</Text>
-                    <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-                      <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#4facfe', margin: 4, opacity: 0.7 }} />
-                      <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#4facfe', margin: 4, opacity: 0.5 }} />
-                      <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#4facfe', margin: 4, opacity: 0.3 }} />
+                    {/* VS */}
+                    <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(24), fontWeight: 'bold', marginHorizontal: 8 }}>VS</Text>
+                    {/* Opponent/Computer Choice Card */}
+                    <View style={{ alignItems: 'center', marginHorizontal: 12 }}>
+                      <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginBottom: 4 }}>{mode === 'computer' ? 'Computer' : 'Opponent'}</Text>
+                      <View style={{ backgroundColor: '#222a36', borderRadius: 16, padding: 24, minWidth: width * 0.4, alignItems: 'center' }}>
+                        <Text style={{ fontSize: getResponsiveFontSize(36) }}>
+                          {getChoiceEmoji(opponentChoice)}
+                        </Text>
+                        <Text style={{ color: '#fff', fontSize: getResponsiveFontSize(16), marginTop: 8, textTransform: 'capitalize' }}>{opponentChoice || ''}</Text>
+                      </View>
                     </View>
                   </View>
                 )}
+                {/* Only show the result card if the popup is NOT visible */}
+                {!showResultPopup && (
+                  <View style={{
+                    backgroundColor: '#222a36',
+                    borderRadius: 16,
+                    padding: 24,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 8,
+                    elevation: 6,
+                    alignItems: 'center',
+                    minWidth: width * 0.4,
+                    marginBottom: 16,
+                  }}>
+                    <Text style={{ fontSize: getResponsiveFontSize(48), marginBottom: 8, textAlign: 'center' }}>
+                      {getResultIcon()}
+                    </Text>
+                    <Text style={{
+                      fontSize: getResponsiveFontSize(28),
+                      fontWeight: 'bold',
+                      marginBottom: 8,
+                      color: getResultColor(),
+                      textAlign: 'center',
+                    }}>
+                      {getResultText()}
+                    </Text>
+                  </View>
+                )}
+                {/* Animated popup remains as is */}
                 {showResultPopup && (
                   <View style={{
                     position: 'absolute',
