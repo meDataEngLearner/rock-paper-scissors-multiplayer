@@ -10,6 +10,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import GameScreen from './src/screens/GameScreen';
 import MultiplayerScreen from './src/screens/MultiplayerScreen';
 import RoomScreen from './src/screens/RoomScreen';
+import BluetoothMultiplayerScreen from './src/screens/BluetoothMultiplayerScreen';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -18,6 +19,7 @@ export type RootStackParamList = {
     | { mode: 'multiplayer'; roomId: string; playerNumber: number };
   Multiplayer: undefined;
   Room: { roomId: string; isHost: boolean };
+  BluetoothMultiplayer: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -61,6 +63,11 @@ export default function App() {
                 name="Room" 
                 component={RoomScreen} 
                 options={{ title: 'Game Room' }}
+              />
+              <Stack.Screen
+                name="BluetoothMultiplayer"
+                component={BluetoothMultiplayerScreen}
+                options={{ title: 'Bluetooth Multiplayer' }}
               />
             </Stack.Navigator>
           </NavigationContainer>

@@ -20,14 +20,17 @@ const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
-  const [selectedMode, setSelectedMode] = React.useState<'computer' | 'multiplayer' | null>(null);
+  type ModeType = 'computer' | 'multiplayer' | 'bluetooth' | null;
+  const [selectedMode, setSelectedMode] = React.useState<ModeType>(null);
 
-  const handleModeSelection = (mode: 'computer' | 'multiplayer') => {
+  const handleModeSelection = (mode: 'computer' | 'multiplayer' | 'bluetooth') => {
     setSelectedMode(mode);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setTimeout(() => {
       if (mode === 'multiplayer') {
         navigation.navigate('Multiplayer');
+      } else if (mode === 'bluetooth') {
+        navigation.navigate({ name: 'BluetoothMultiplayer' });
       } else {
         navigation.navigate('Game', { mode });
       }
@@ -78,6 +81,23 @@ export default function HomeScreen() {
               <Text style={styles.buttonText}>Play with Friends (Multiplayer)</Text>
               <Text style={styles.buttonSubtext}>Real-time multiplayer</Text>
               {selectedMode === 'multiplayer' && (
+                <Ionicons name="checkmark-circle" size={24} color="#fff" style={{ marginTop: 8 }} />
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.modeButton, selectedMode === 'bluetooth' && styles.selectedButton]}
+            onPress={() => handleModeSelection('bluetooth')}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={['#43e97b', '#38f9d7']}
+              style={styles.buttonGradient}
+            >
+              <Text style={styles.buttonText}>Bluetooth Multiplayer</Text>
+              <Text style={styles.buttonSubtext}>Offline play via Bluetooth</Text>
+              {selectedMode === 'bluetooth' && (
                 <Ionicons name="checkmark-circle" size={24} color="#fff" style={{ marginTop: 8 }} />
               )}
             </LinearGradient>
