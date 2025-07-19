@@ -13,14 +13,16 @@ import MultiplayerScreen from './src/screens/MultiplayerScreen';
 import RoomScreen from './src/screens/RoomScreen';
 import BluetoothMultiplayerScreen from './src/screens/BluetoothMultiplayerScreen';
 
+export type RoundMode = '3' | '5' | '9' | 'no-limit';
+
 export type RootStackParamList = {
   Home: undefined;
   Game:
-    | { mode: 'computer' }
-    | { mode: 'multiplayer'; roomId: string; playerNumber: number };
-  Multiplayer: undefined;
-  Room: { roomId: string; isHost: boolean };
-  BluetoothMultiplayer: undefined;
+    | { mode: 'computer'; roundMode: RoundMode }
+    | { mode: 'multiplayer'; roomId: string; playerNumber: number; roundMode: RoundMode };
+  Multiplayer: { roundMode: RoundMode };
+  Room: { roomId: string; isHost: boolean; roundMode: RoundMode };
+  BluetoothMultiplayer: { roundMode: RoundMode };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();

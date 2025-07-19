@@ -16,7 +16,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList, RoundMode } from '../../App';
 import * as Haptics from 'expo-haptics';
 import { useSocket } from '../utils/SocketContext';
 import GameCard from '../components/GameCard';
@@ -33,8 +33,8 @@ const { width, height } = Dimensions.get('window');
 
 export default function GameScreen() {
   const navigation = useNavigation<GameScreenNavigationProp>();
-  const route = useRoute<GameScreenRouteProp>();
-  const { mode } = route.params;
+  const route = useRoute<RouteProp<RootStackParamList, 'Game'>>();
+  const { mode, roundMode } = route.params;
   const roomId = mode === 'multiplayer' ? route.params.roomId : undefined;
   const playerNumber = mode === 'multiplayer' && 'playerNumber' in route.params ? route.params.playerNumber : null;
   
@@ -65,6 +65,23 @@ export default function GameScreen() {
   const autoRestartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const socket = useSocket();
+
+  const [playerWins, setPlayerWins] = useState(0);
+  const [opponentWins, setOpponentWins] = useState(0);
+  const [currentRound, setCurrentRound] = useState(1);
+  const [isTiebreaker, setIsTiebreaker] = useState(false);
+  const [matchOver, setMatchOver] = useState(false);
+  const [matchWinner, setMatchWinner] = useState<'player' | 'opponent' | null>(null);
+  const totalRounds = roundMode === 'no-limit' ? null : parseInt(roundMode, 10);
+  const getMajority = (roundMode: string) => {
+    if (roundMode === 'no-limit') return Infinity;
+    const n = parseInt(roundMode, 10);
+    return Math.floor(n / 2) + 1;
+  };
+  const majority = getMajority(roundMode);
+  const [roundResults, setRoundResults] = useState<Array<'player' | 'opponent' | 'tie' | null>>([]);
+  const tiebreakerAnim = useRef(new Animated.Value(1)).current;
+  const [showWinnerModal, setShowWinnerModal] = useState(false);
 
   useEffect(() => {
     if (mode === 'multiplayer' && roomId && socket) {
@@ -375,11 +392,19 @@ export default function GameScreen() {
     }
     
     // Reset game state
+    setPlayerWins(0);
+    setOpponentWins(0);
+    setCurrentRound(1);
+    setIsTiebreaker(false);
+    setMatchOver(false);
+    setMatchWinner(null);
     setPlayerChoice(null);
     setOpponentChoice(null);
     setRoundResult(null);
     setOpponentMoved(false);
     setCanPlayAgain(false);
+    setRoundResults([]);
+    setShowWinnerModal(false);
     
     // Start new round with proper countdown for both modes
     if (mode === 'multiplayer') {
@@ -422,6 +447,48 @@ export default function GameScreen() {
       default: return '';
     }
   };
+
+  useEffect(() => {
+    if (roundResult && !matchOver) {
+      let newPlayerWins = playerWins;
+      let newOpponentWins = opponentWins;
+      let newResults = [...roundResults];
+      if (roundResult === 'p1' && playerNumber === 1) {
+        newPlayerWins++;
+        newResults[currentRound - 1] = 'player';
+      } else if (roundResult === 'p2' && playerNumber === 2) {
+        newOpponentWins++;
+        newResults[currentRound - 1] = 'opponent';
+      } else if (roundResult === 'tie') {
+        newResults[currentRound - 1] = 'tie';
+      }
+      setPlayerWins(newPlayerWins);
+      setOpponentWins(newOpponentWins);
+      setRoundResults(newResults);
+      setCurrentRound(r => r + 1);
+
+      if (isTiebreaker) {
+        Animated.sequence([
+          Animated.timing(tiebreakerAnim, { toValue: 0.5, duration: 200, useNativeDriver: true }),
+          Animated.timing(tiebreakerAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+        ]).start();
+      }
+      if (newPlayerWins >= majority || newOpponentWins >= majority) {
+        setMatchOver(true);
+        setMatchWinner(newPlayerWins >= majority ? 'player' : 'opponent');
+        if (newPlayerWins >= majority) {
+          setScores(prev => ({ ...prev, wins: prev.wins + 1 }));
+        } else {
+          setScores(prev => ({ ...prev, losses: prev.losses + 1 }));
+        }
+      } else if (newPlayerWins === newOpponentWins && newPlayerWins > 0) {
+        setIsTiebreaker(true);
+        setMatchOver(true);
+        setMatchWinner(null); // Tiebreaker doesn't have a clear winner yet
+      }
+      if (matchOver) setShowWinnerModal(true);
+    }
+  }, [roundResult, matchOver, playerWins, opponentWins, currentRound, isTiebreaker, roundResults, majority, playerNumber]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#1a1a2e' }}>
@@ -471,22 +538,60 @@ export default function GameScreen() {
 
             {gamePhase === 'playing' && (
               <View style={styles.playingContainer}>
+                <View style={styles.matchHeader}>
+                  {totalRounds && (
+                    <View style={styles.progressBar}>
+                      {[...Array(totalRounds)].map((_, i) => (
+                        <View
+                          key={i}
+                          style={[
+                            styles.progressDot,
+                            i < roundResults.length && roundResults[i] === 'player'
+                              ? styles.dotWin
+                              : i < roundResults.length && roundResults[i] === 'opponent'
+                              ? styles.dotLose
+                              : i < roundResults.length && roundResults[i] === 'tie'
+                              ? styles.dotTie
+                              : styles.dotPending,
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  )}
+                  <View style={styles.scoreboardCard}>
+                    <Text style={styles.scoreLabel}>You</Text>
+                    <Text style={styles.score}>{playerWins}</Text>
+                    <Text style={styles.scoreLabel}>Opponent</Text>
+                    <Text style={styles.score}>{opponentWins}</Text>
+                  </View>
+                  {isTiebreaker && (
+                    <Animated.View style={[styles.tiebreakerBanner, { opacity: tiebreakerAnim }]}> 
+                      <Text style={styles.tiebreakerText}>🔥 Tiebreaker! 🔥</Text>
+                    </Animated.View>
+                  )}
+                </View>
                 <View style={styles.choicesContainer}>
-                  <ChoiceButton
-                    choice="rock"
-                    onPress={() => handleChoice('rock')}
-                    disabled={!!playerChoice}
-                  />
-                  <ChoiceButton
-                    choice="paper"
-                    onPress={() => handleChoice('paper')}
-                    disabled={!!playerChoice}
-                  />
-                  <ChoiceButton
-                    choice="scissors"
-                    onPress={() => handleChoice('scissors')}
-                    disabled={!!playerChoice}
-                  />
+                  <View style={matchOver ? styles.disabledButton : undefined}>
+                    <ChoiceButton
+                      choice="rock"
+                      onPress={() => handleChoice('rock')}
+                      disabled={!!playerChoice || matchOver}
+                    />
+                  </View>
+                  <View style={matchOver ? styles.disabledButton : undefined}>
+                    <ChoiceButton
+                      choice="paper"
+                      onPress={() => handleChoice('paper')}
+                      disabled={!!playerChoice || matchOver}
+                    />
+                  </View>
+                  <View style={matchOver ? styles.disabledButton : undefined}>
+                    <ChoiceButton
+                      choice="scissors"
+                      onPress={() => handleChoice('scissors')}
+                      disabled={!!playerChoice || matchOver}
+                    />
+                  </View>
                 </View>
                 
                 {playerChoice && (
@@ -653,6 +758,19 @@ export default function GameScreen() {
           </View>
         </Modal>
       )}
+      {showWinnerModal && (
+        <View style={styles.winnerModalOverlay}>
+          <View style={styles.winnerModalCard}>
+            <Text style={styles.trophy}>🏆</Text>
+            <Text style={styles.matchWinnerText}>
+              {matchWinner === 'player' ? 'You win the match!' : 'Opponent wins the match!'}
+            </Text>
+            <Text style={styles.confetti}>🎉🎉🎉</Text>
+            <Button title="Play Again" onPress={handlePlayAgain} />
+            <Button title="Quit" onPress={handleQuit} color="#d9534f" />
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -772,4 +890,46 @@ const styles = StyleSheet.create({
    choiceEmoji: {
      fontSize: getResponsiveFontSize(40),
    },
+   roundInfo: {
+     fontSize: getResponsiveFontSize(18),
+     color: '#fff',
+     marginBottom: 10,
+   },
+   scoreInfo: {
+     fontSize: getResponsiveFontSize(20),
+     color: '#fff',
+     marginBottom: 10,
+   },
+   tiebreakerInfo: {
+     fontSize: getResponsiveFontSize(16),
+     color: '#fff',
+     marginBottom: 10,
+   },
+   matchOverContainer: {
+     marginTop: 20,
+     alignItems: 'center',
+   },
+   matchWinnerText: {
+     fontSize: getResponsiveFontSize(24),
+     fontWeight: 'bold',
+     color: '#fff',
+     marginBottom: 20,
+   },
+   matchHeader: { alignItems: 'center', marginBottom: 16 },
+   progressBar: { flexDirection: 'row', marginBottom: 8 },
+   progressDot: { width: 16, height: 16, borderRadius: 8, marginHorizontal: 2, backgroundColor: '#444' },
+   dotWin: { backgroundColor: '#43e97b' },
+   dotLose: { backgroundColor: '#fa709a' },
+   dotTie: { backgroundColor: '#ffd700' },
+   dotPending: { backgroundColor: '#444', opacity: 0.3 },
+   scoreboardCard: { flexDirection: 'row', backgroundColor: '#222a36', borderRadius: 12, padding: 12, alignItems: 'center', marginBottom: 8 },
+   scoreLabel: { color: '#fff', fontSize: 16, marginHorizontal: 8 },
+   score: { color: '#43e97b', fontSize: 20, fontWeight: 'bold', marginHorizontal: 8 },
+   tiebreakerBanner: { backgroundColor: '#ffd700', borderRadius: 8, padding: 8, marginTop: 8 },
+   tiebreakerText: { color: '#222', fontWeight: 'bold', fontSize: 16 },
+   winnerModalOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', zIndex: 20 },
+   winnerModalCard: { backgroundColor: '#fff', borderRadius: 20, padding: 32, alignItems: 'center', width: 300 },
+   trophy: { fontSize: 64, marginBottom: 12 },
+   confetti: { fontSize: 32, marginBottom: 16 },
+   disabledButton: { opacity: 0.5 },
  }); 

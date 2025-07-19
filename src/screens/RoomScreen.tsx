@@ -11,7 +11,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList, RoundMode } from '../../App';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
@@ -25,7 +25,7 @@ const { width } = Dimensions.get('window');
 export default function RoomScreen() {
   const navigation = useNavigation<RoomScreenNavigationProp>();
   const route = useRoute<RoomScreenRouteProp>();
-  const { roomId, isHost } = route.params;
+  const { roomId, isHost, roundMode } = route.params;
   
   const [opponentJoined, setOpponentJoined] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -232,8 +232,7 @@ export default function RoomScreen() {
   useEffect(() => {
     if (hasNavigated && latestPlayerNumber.current && opponentJoined) {
       isNavigatingToGame.current = true;
-      console.log('[RoomScreen] Navigating to Game screen with mode: multiplayer, roomId:', roomId, 'playerNumber:', latestPlayerNumber.current);
-      navigation.replace('Game', { mode: 'multiplayer', roomId, playerNumber: latestPlayerNumber.current });
+      navigation.replace('Game', { mode: 'multiplayer', roomId, playerNumber: latestPlayerNumber.current, roundMode });
     }
   }, [hasNavigated, opponentJoined]);
 

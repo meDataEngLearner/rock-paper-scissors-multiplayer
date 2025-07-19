@@ -9,19 +9,22 @@ import {
   Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList, RoundMode } from '../../App';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
 
 type MultiplayerScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Multiplayer'>;
+type MultiplayerScreenRouteProp = RouteProp<RootStackParamList, 'Multiplayer'>;
 
 const { width } = Dimensions.get('window');
 
 export default function MultiplayerScreen() {
   const navigation = useNavigation<MultiplayerScreenNavigationProp>();
+  const route = useRoute<MultiplayerScreenRouteProp>();
+  const { roundMode } = route.params;
   const [roomId, setRoomId] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
@@ -40,7 +43,7 @@ export default function MultiplayerScreen() {
     
     setTimeout(() => {
       setIsCreating(false);
-      navigation.navigate('Room', { roomId: newRoomId, isHost: true });
+      navigation.navigate('Room', { roomId: newRoomId, isHost: true, roundMode });
     }, 1000);
   };
 
@@ -53,7 +56,7 @@ export default function MultiplayerScreen() {
     }
     
     // In a real app, you would validate the room exists on your server
-    navigation.navigate('Room', { roomId: roomId.trim().toUpperCase(), isHost: false });
+    navigation.navigate('Room', { roomId: roomId.trim().toUpperCase(), isHost: false, roundMode });
   };
 
   const handleShareRoom = async (roomIdToShare: string) => {
