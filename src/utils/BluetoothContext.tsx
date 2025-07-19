@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useRef } from 'react';
 import { BleManager, Device, Subscription, Characteristic } from 'react-native-ble-plx';
 import { Platform, PermissionsAndroid } from 'react-native';
+import Constants from 'expo-constants';
+
+const isExpoGo = Constants.appOwnership === 'expo';
 
 const GAME_SERVICE_UUID = '12345678-1234-1234-1234-1234567890ab';
 const GAME_CHAR_UUID = '87654321-4321-4321-4321-ba0987654321';
@@ -22,6 +25,7 @@ interface BluetoothContextType {
 const BluetoothContext = createContext<BluetoothContextType | undefined>(undefined);
 
 export const BluetoothProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  if (isExpoGo) return <>{children}</>;
   const [isHost, setIsHost] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [deviceName, setDeviceName] = useState<string | null>(null);
@@ -138,6 +142,21 @@ export const BluetoothProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 };
 
 export const useBluetooth = () => {
+  if (isExpoGo) {
+    return {
+      isHost: false,
+      isConnected: false,
+      deviceName: null,
+      connectAsHost: () => {},
+      connectAsGuest: () => {},
+      sendMessage: () => {},
+      receivedMessage: null,
+      error: 'Bluetooth is not available in Expo Go.',
+      discoveredDevices: [],
+      selectDevice: () => {},
+      scanning: false,
+    };
+  }
   const ctx = useContext(BluetoothContext);
   if (!ctx) throw new Error('useBluetooth must be used within BluetoothProvider');
   return ctx;
