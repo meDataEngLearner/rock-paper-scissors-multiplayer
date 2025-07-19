@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SocketProvider } from './src/utils/SocketContext';
+import { BluetoothProvider } from './src/utils/BluetoothContext';
 
 import HomeScreen from './src/screens/HomeScreen';
 import GameScreen from './src/screens/GameScreen';
@@ -29,48 +30,50 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <SocketProvider>
-          <NavigationContainer>
-            <StatusBar style="light" />
-            <Stack.Navigator
-              initialRouteName="Home"
-              screenOptions={{
-                headerStyle: {
-                  backgroundColor: '#1a1a2e',
-                },
-                headerTintColor: '#fff',
-                headerTitleStyle: {
-                  fontWeight: 'bold',
-                },
-                cardStyle: { backgroundColor: '#16213e' },
-              }}
-            >
-              <Stack.Screen 
-                name="Home" 
-                component={HomeScreen} 
-                options={{ title: 'Rock Paper Scissors' }}
-              />
-              <Stack.Screen 
-                name="Game" 
-                component={GameScreen} 
-                options={{ title: 'Game' }}
-              />
-              <Stack.Screen 
-                name="Multiplayer" 
-                component={MultiplayerScreen} 
-                options={{ title: 'Multiplayer' }}
-              />
-              <Stack.Screen 
-                name="Room" 
-                component={RoomScreen} 
-                options={{ title: 'Game Room' }}
-              />
-              <Stack.Screen
-                name="BluetoothMultiplayer"
-                component={BluetoothMultiplayerScreen}
-                options={{ title: 'Bluetooth Multiplayer' }}
-              />
-            </Stack.Navigator>
-          </NavigationContainer>
+          <BluetoothProvider>
+            <NavigationContainer>
+              <StatusBar style="light" />
+              <Stack.Navigator
+                initialRouteName="Home"
+                screenOptions={{
+                  headerStyle: {
+                    backgroundColor: '#1a1a2e',
+                  },
+                  headerTintColor: '#fff',
+                  headerTitleStyle: {
+                    fontWeight: 'bold',
+                  },
+                  cardStyle: { backgroundColor: '#16213e' },
+                }}
+              >
+                <Stack.Screen 
+                  name="Home" 
+                  component={HomeScreen} 
+                  options={{ title: 'Rock Paper Scissors' }}
+                />
+                <Stack.Screen 
+                  name="Game" 
+                  component={GameScreen} 
+                  options={{ title: 'Game' }}
+                />
+                <Stack.Screen 
+                  name="Multiplayer" 
+                  component={MultiplayerScreen} 
+                  options={{ title: 'Multiplayer' }}
+                />
+                <Stack.Screen 
+                  name="Room" 
+                  component={RoomScreen} 
+                  options={{ title: 'Game Room' }}
+                />
+                <Stack.Screen
+                  name="BluetoothMultiplayer"
+                  component={BluetoothMultiplayerScreen}
+                  options={{ title: 'Bluetooth Multiplayer' }}
+                />
+              </Stack.Navigator>
+            </NavigationContainer>
+          </BluetoothProvider>
         </SocketProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
