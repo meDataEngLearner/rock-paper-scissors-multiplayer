@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native';
 import { useBluetooth } from '../utils/BluetoothContext';
+import { Device } from 'react-native-ble-plx';
 
 export default function BluetoothMultiplayerScreen() {
   const {
@@ -9,7 +10,12 @@ export default function BluetoothMultiplayerScreen() {
     deviceName,
     connectAsHost,
     connectAsGuest,
+    sendMessage,
+    receivedMessage,
     error,
+    discoveredDevices,
+    selectDevice,
+    scanning,
   } = useBluetooth();
 
   return (
@@ -23,6 +29,23 @@ export default function BluetoothMultiplayerScreen() {
           <TouchableOpacity style={styles.button} onPress={connectAsGuest}>
             <Text style={styles.buttonText}>Join Game</Text>
           </TouchableOpacity>
+          {scanning && (
+            <View style={{ marginTop: 20 }}>
+              <ActivityIndicator size="large" color="#43e97b" />
+              <Text style={styles.status}>Scanning for devices...</Text>
+              <FlatList
+                data={discoveredDevices}
+                keyExtractor={item => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity style={styles.deviceButton} onPress={() => selectDevice(item)}>
+                    <Text style={styles.deviceText}>{item.name || item.id}</Text>
+                  </TouchableOpacity>
+                )}
+                ListEmptyComponent={<Text style={styles.status}>No devices found yet.</Text>}
+                style={{ marginTop: 10, maxHeight: 200 }}
+              />
+            </View>
+          )}
           {error && <Text style={styles.error}>{error}</Text>}
         </>
       ) : (
@@ -65,6 +88,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     marginTop: 16,
+    textAlign: 'center',
   },
   error: {
     color: '#ff5252',
@@ -72,5 +96,16 @@ const styles = StyleSheet.create({
     marginTop: 20,
     textAlign: 'center',
     maxWidth: 300,
+  },
+  deviceButton: {
+    backgroundColor: '#222a36',
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 6,
+    alignItems: 'center',
+  },
+  deviceText: {
+    color: '#fff',
+    fontSize: 16,
   },
 }); 
