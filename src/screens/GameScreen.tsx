@@ -449,46 +449,45 @@ export default function GameScreen() {
   };
 
   useEffect(() => {
-    if (roundResult && !matchOver) {
-      let newPlayerWins = playerWins;
-      let newOpponentWins = opponentWins;
-      let newResults = [...roundResults];
-      if (roundResult === 'p1' && playerNumber === 1) {
-        newPlayerWins++;
-        newResults[currentRound - 1] = 'player';
-      } else if (roundResult === 'p2' && playerNumber === 2) {
-        newOpponentWins++;
-        newResults[currentRound - 1] = 'opponent';
-      } else if (roundResult === 'tie') {
-        newResults[currentRound - 1] = 'tie';
-      }
-      setPlayerWins(newPlayerWins);
-      setOpponentWins(newOpponentWins);
-      setRoundResults(newResults);
-      setCurrentRound(r => r + 1);
-
-      if (isTiebreaker) {
-        Animated.sequence([
-          Animated.timing(tiebreakerAnim, { toValue: 0.5, duration: 200, useNativeDriver: true }),
-          Animated.timing(tiebreakerAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
-        ]).start();
-      }
-      if (newPlayerWins >= majority || newOpponentWins >= majority) {
-        setMatchOver(true);
-        setMatchWinner(newPlayerWins >= majority ? 'player' : 'opponent');
-        if (newPlayerWins >= majority) {
-          setScores(prev => ({ ...prev, wins: prev.wins + 1 }));
-        } else {
-          setScores(prev => ({ ...prev, losses: prev.losses + 1 }));
-        }
-      } else if (newPlayerWins === newOpponentWins && newPlayerWins > 0) {
-        setIsTiebreaker(true);
-        setMatchOver(true);
-        setMatchWinner(null); // Tiebreaker doesn't have a clear winner yet
-      }
-      if (matchOver) setShowWinnerModal(true);
+    if (!roundResult) return;
+    let newPlayerWins = playerWins;
+    let newOpponentWins = opponentWins;
+    let newResults = [...roundResults];
+    if (roundResult === 'p1' && playerNumber === 1) {
+      newPlayerWins++;
+      newResults[currentRound - 1] = 'player';
+    } else if (roundResult === 'p2' && playerNumber === 2) {
+      newOpponentWins++;
+      newResults[currentRound - 1] = 'opponent';
+    } else if (roundResult === 'tie') {
+      newResults[currentRound - 1] = 'tie';
     }
-  }, [roundResult, matchOver, playerWins, opponentWins, currentRound, isTiebreaker, roundResults, majority, playerNumber]);
+    setPlayerWins(newPlayerWins);
+    setOpponentWins(newOpponentWins);
+    setRoundResults(newResults);
+    setCurrentRound(r => r + 1);
+
+    if (isTiebreaker) {
+      Animated.sequence([
+        Animated.timing(tiebreakerAnim, { toValue: 0.5, duration: 200, useNativeDriver: true }),
+        Animated.timing(tiebreakerAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+      ]).start();
+    }
+    if (newPlayerWins >= majority || newOpponentWins >= majority) {
+      setMatchOver(true);
+      setMatchWinner(newPlayerWins >= majority ? 'player' : 'opponent');
+      if (newPlayerWins >= majority) {
+        setScores(prev => ({ ...prev, wins: prev.wins + 1 }));
+      } else {
+        setScores(prev => ({ ...prev, losses: prev.losses + 1 }));
+      }
+    } else if (newPlayerWins === newOpponentWins && newPlayerWins > 0) {
+      setIsTiebreaker(true);
+      setMatchOver(true);
+      setMatchWinner(null); // Tiebreaker doesn't have a clear winner yet
+    }
+    if (matchOver) setShowWinnerModal(true);
+  }, [roundResult, playerNumber]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#1a1a2e' }}>
@@ -558,12 +557,6 @@ export default function GameScreen() {
                       ))}
                     </View>
                   )}
-                  <View style={styles.scoreboardCard}>
-                    <Text style={styles.scoreLabel}>You</Text>
-                    <Text style={styles.score}>{playerWins}</Text>
-                    <Text style={styles.scoreLabel}>Opponent</Text>
-                    <Text style={styles.score}>{opponentWins}</Text>
-                  </View>
                   {isTiebreaker && (
                     <Animated.View style={[styles.tiebreakerBanner, { opacity: tiebreakerAnim }]}> 
                       <Text style={styles.tiebreakerText}>🔥 Tiebreaker! 🔥</Text>
