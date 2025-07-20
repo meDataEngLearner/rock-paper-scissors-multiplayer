@@ -340,9 +340,11 @@ export default function GameScreen() {
         } else {
           setScores(prev => ({ ...prev, ties: prev.ties + 1 }));
         }
-        // Auto restart for single player - store timeout in ref
+        // Auto restart for single player - only if match is not over
         autoRestartTimeoutRef.current = setTimeout(() => {
-          startSinglePlayerRound();
+          if (!matchOver) {
+            startSinglePlayerRound();
+          }
         }, 2000);
       }, 500);
     }
@@ -410,7 +412,7 @@ export default function GameScreen() {
     setTiebreakerResults([]);
     setInTiebreaker(false);
     setTiebreakerRound(1);
-    setRoundResults([]);
+    // Removed setRoundResults([]);
     setShowWinnerModal(false);
     
     // Start new round with proper countdown for both modes
@@ -459,22 +461,39 @@ export default function GameScreen() {
     if (!roundResult) return;
     let newPlayerWins = playerWins;
     let newOpponentWins = opponentWins;
-    let newResults = [...roundResults];
-    if (roundResult === 'p1' && playerNumber === 1) {
-      newPlayerWins++;
-      newResults[currentRound - 1] = 'player';
-    } else if (roundResult === 'p2' && playerNumber === 2) {
-      newOpponentWins++;
-      newResults[currentRound - 1] = 'opponent';
-    } else if (roundResult === 'tie') {
-      newResults[currentRound - 1] = 'tie';
+    if (inTiebreaker) {
+      let newTiebreakerResults = [...tiebreakerResults];
+      if (roundResult === 'p1' && playerNumber === 1) {
+        newPlayerWins++;
+        newTiebreakerResults[tiebreakerRound - 1] = 'player';
+      } else if (roundResult === 'p2' && playerNumber === 2) {
+        newOpponentWins++;
+        newTiebreakerResults[tiebreakerRound - 1] = 'opponent';
+      } else if (roundResult === 'tie') {
+        newTiebreakerResults[tiebreakerRound - 1] = 'tie';
+      }
+      setTiebreakerResults(newTiebreakerResults);
+      setTiebreakerRound(r => r + 1);
+    } else {
+      let newMainResults = [...mainRoundResults];
+      if (roundResult === 'p1' && playerNumber === 1) {
+        newPlayerWins++;
+        newMainResults[currentRound - 1] = 'player';
+      } else if (roundResult === 'p2' && playerNumber === 2) {
+        newOpponentWins++;
+        newMainResults[currentRound - 1] = 'opponent';
+      } else if (roundResult === 'tie') {
+        newMainResults[currentRound - 1] = 'tie';
+      }
+      setMainRoundResults(newMainResults);
+      // Only increment round if match is not over
+      if (!matchOver) {
+        setCurrentRound(r => r + 1);
+      }
     }
     setPlayerWins(newPlayerWins);
     setOpponentWins(newOpponentWins);
-    setRoundResults(newResults);
-    setCurrentRound(r => r + 1);
-
-    if (isTiebreaker) {
+    if (inTiebreaker) {
       Animated.sequence([
         Animated.timing(tiebreakerAnim, { toValue: 0.5, duration: 200, useNativeDriver: true }),
         Animated.timing(tiebreakerAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
@@ -488,8 +507,8 @@ export default function GameScreen() {
       } else {
         setScores(prev => ({ ...prev, losses: prev.losses + 1 }));
       }
-    } else if (newPlayerWins === newOpponentWins && newPlayerWins > 0) {
-      setIsTiebreaker(true);
+    } else if (newPlayerWins === newOpponentWins && newPlayerWins > 0 && !inTiebreaker) {
+      setInTiebreaker(true);
       setMatchOver(true);
       setMatchWinner(null); // Tiebreaker doesn't have a clear winner yet
     }
@@ -545,8 +564,8 @@ export default function GameScreen() {
             {gamePhase === 'playing' && (
               <View style={styles.playingContainer}>
                 <View style={styles.matchHeader}>
-                  {!inTiebreaker && totalRounds && (
-                    <Text style={styles.roundInfo}>Round {mainRoundResults.length + 1} of {totalRounds}</Text>
+                  {!inTiebreaker && totalRounds && !matchOver && (
+                    <Text style={styles.roundInfo}>Round {Math.min(mainRoundResults.length + 1, totalRounds)} of {totalRounds}</Text>
                   )}
                   {inTiebreaker && (
                     <Text style={styles.roundInfo}>Tiebreaker Round {tiebreakerRound}</Text>
