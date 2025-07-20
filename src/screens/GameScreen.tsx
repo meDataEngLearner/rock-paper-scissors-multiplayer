@@ -79,7 +79,10 @@ export default function GameScreen() {
     return Math.floor(n / 2) + 1;
   };
   const majority = getMajority(roundMode);
-  const [roundResults, setRoundResults] = useState<Array<'player' | 'opponent' | 'tie' | null>>([]);
+  const [mainRoundResults, setMainRoundResults] = useState<Array<'player' | 'opponent' | 'tie'>>([]);
+  const [tiebreakerResults, setTiebreakerResults] = useState<Array<'player' | 'opponent' | 'tie'>>([]);
+  const [inTiebreaker, setInTiebreaker] = useState(false);
+  const [tiebreakerRound, setTiebreakerRound] = useState(1);
   const tiebreakerAnim = useRef(new Animated.Value(1)).current;
   const [showWinnerModal, setShowWinnerModal] = useState(false);
 
@@ -403,6 +406,10 @@ export default function GameScreen() {
     setRoundResult(null);
     setOpponentMoved(false);
     setCanPlayAgain(false);
+    setMainRoundResults([]);
+    setTiebreakerResults([]);
+    setInTiebreaker(false);
+    setTiebreakerRound(1);
     setRoundResults([]);
     setShowWinnerModal(false);
     
@@ -538,18 +545,24 @@ export default function GameScreen() {
             {gamePhase === 'playing' && (
               <View style={styles.playingContainer}>
                 <View style={styles.matchHeader}>
-                  {totalRounds && (
+                  {!inTiebreaker && totalRounds && (
+                    <Text style={styles.roundInfo}>Round {mainRoundResults.length + 1} of {totalRounds}</Text>
+                  )}
+                  {inTiebreaker && (
+                    <Text style={styles.roundInfo}>Tiebreaker Round {tiebreakerRound}</Text>
+                  )}
+                  {totalRounds && !inTiebreaker && (
                     <View style={styles.progressBar}>
                       {[...Array(totalRounds)].map((_, i) => (
                         <View
                           key={i}
                           style={[
                             styles.progressDot,
-                            i < roundResults.length && roundResults[i] === 'player'
+                            i < mainRoundResults.length && mainRoundResults[i] === 'player'
                               ? styles.dotWin
-                              : i < roundResults.length && roundResults[i] === 'opponent'
+                              : i < mainRoundResults.length && mainRoundResults[i] === 'opponent'
                               ? styles.dotLose
-                              : i < roundResults.length && roundResults[i] === 'tie'
+                              : i < mainRoundResults.length && mainRoundResults[i] === 'tie'
                               ? styles.dotTie
                               : styles.dotPending,
                           ]}
@@ -557,7 +570,20 @@ export default function GameScreen() {
                       ))}
                     </View>
                   )}
-                  {isTiebreaker && (
+                  {inTiebreaker && tiebreakerResults.length > 0 && (
+                    <View style={styles.progressBar}>
+                      {tiebreakerResults.map((r, i) => (
+                        <View
+                          key={i}
+                          style={[
+                            styles.progressDot,
+                            r === 'player' ? styles.dotWin : r === 'opponent' ? styles.dotLose : styles.dotTie,
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  )}
+                  {inTiebreaker && (
                     <Animated.View style={[styles.tiebreakerBanner, { opacity: tiebreakerAnim }]}> 
                       <Text style={styles.tiebreakerText}>🔥 Tiebreaker! 🔥</Text>
                     </Animated.View>
